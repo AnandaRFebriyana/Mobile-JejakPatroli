@@ -29,7 +29,7 @@ class _HistoryReportState extends State<HistoryReport> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "History Activity"),
+          const Header(title: "History Report"),
           Expanded(
             child: FutureBuilder<List<Report>>(
               future: _futureReport,

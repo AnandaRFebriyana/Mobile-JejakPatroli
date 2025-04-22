@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'schedule.dart';
+import 'package:patrol_track_mobile/pages/history_presence.dart';
 import 'report/history_report.dart';
 import 'setting.dart';
 import 'home/home.dart';
@@ -15,7 +15,7 @@ class _MenuNavState extends State<MenuNav> {
   int currentTab = 0;
   final List<Widget> screens = [
     Home(),
-    SchedulePage(),
+    HistoryPresencePage(),
     HistoryReport(),
     Setting(),
   ];
@@ -26,7 +26,7 @@ class _MenuNavState extends State<MenuNav> {
     return Scaffold(
       body: currentScreen,
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.qr_code_scanner),
+        child: Icon(Icons.camera_alt_outlined),
         backgroundColor: Color(0xFF1E3B57),
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
@@ -50,9 +50,9 @@ class _MenuNavState extends State<MenuNav> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 _buildTabItem(0, Icons.home, 'Home'),
-                _buildTabItem(1, Icons.calendar_month, 'Schedule'),
+                _buildTabItem(1, Icons.assignment, 'Presence'),
                 SizedBox(width: 40),
-                _buildTabItem(2, Icons.history, 'History'),
+                _buildTabItem(2, Icons.history, 'History Report'),
                 _buildTabItem(3, Icons.person, 'Profile'),
               ],
             ),

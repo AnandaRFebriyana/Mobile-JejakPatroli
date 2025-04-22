@@ -227,12 +227,12 @@ class _HomeState extends State<Home> {
                 },
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "History Presence",
+                      "Schedule",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -265,7 +265,7 @@ class _HomeState extends State<Home> {
                 );
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(
-                  child: Text('No history attendance data available.'),
+                  child: Text('No schedule available.'),
                 );
               } else {
                 List<Attendance> attendances = snapshot.data!;

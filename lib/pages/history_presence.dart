@@ -5,12 +5,14 @@ import 'package:patrol_track_mobile/components/history_card.dart';
 import 'package:patrol_track_mobile/core/controllers/attendance_controller.dart';
 import 'package:patrol_track_mobile/core/models/attendance.dart';
 
-class HistoryPresence extends StatefulWidget {
+class HistoryPresencePage extends StatefulWidget {
+  const HistoryPresencePage({Key? key}) : super(key: key);
+
   @override
   _HistoryPresenceState createState() => _HistoryPresenceState();
 }
 
-class _HistoryPresenceState extends State<HistoryPresence> {
+class _HistoryPresenceState extends State<HistoryPresencePage> {
   late Future<List<Attendance>> _attendanceFuture;
 
   @override
@@ -31,7 +33,7 @@ class _HistoryPresenceState extends State<HistoryPresence> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "History Presence", backButton: true),
+          const Header(title: "History Presence"),
           Expanded(
             child: FutureBuilder<List<Attendance>>(
               future: _attendanceFuture,

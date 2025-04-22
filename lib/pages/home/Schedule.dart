@@ -5,14 +5,14 @@ import 'package:patrol_track_mobile/components/header.dart';
 import 'package:patrol_track_mobile/core/controllers/schedule_controller.dart';
 import 'package:patrol_track_mobile/core/models/schedule.dart';
 
-class SchedulePage extends StatefulWidget {
-  const SchedulePage({Key? key}) : super(key: key);
+class SchedulePresence extends StatefulWidget {
+  const SchedulePresence({Key? key}) : super(key: key);
 
   @override
   _ScheduleState createState() => _ScheduleState();
 }
 
-class _ScheduleState extends State<SchedulePage> {
+class _ScheduleState extends State<SchedulePresence> {
   late Future<List<Schedule>> _futureSchedules;
 
   @override
@@ -26,7 +26,7 @@ class _ScheduleState extends State<SchedulePage> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "Jadwal"),
+          const Header(title: "Schedule", backButton: true),
           Expanded(
             child: FutureBuilder<List<Schedule>>(
               future: _futureSchedules,
