@@ -2,7 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Constant {
   // static const String BASE_URL = 'http://10.0.2.2:8000/api';
-  static const String BASE_URL = 'http://patroltrack.my.id/api';
+  static const String BASE_URL = 'http://127.0.0.1:8000/api';
+  // static const String BASE_URL = 'http://patroltrack.my.id/api';
 
   // poltek
   static const double targetLatitude = -8.1599633;
