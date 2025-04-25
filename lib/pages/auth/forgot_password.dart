@@ -10,8 +10,8 @@ class ForgotPass extends StatefulWidget {
 
   const ForgotPass({
     Key? key,
-    this.title = "Forgot Password",
-    this.subtitle = "Enter your email, we will send a verification code.",
+    this.title = "Lupa Password",
+    this.subtitle = "Masukkan email, kami akan mengirim kode verifikasi.",
   }) : super(key: key);
 
   @override
@@ -73,7 +73,7 @@ class _ForgotPass extends State<ForgotPass> {
               children: <Widget>[
                 GestureDetector(
                   onTap: () => Get.back(),
-                  child: Text("Back to Login",
+                  child: Text("Kembali ke menu Login",
                     style: GoogleFonts.poppins(
                         color: Colors.grey, 
                         fontWeight: FontWeight.w600

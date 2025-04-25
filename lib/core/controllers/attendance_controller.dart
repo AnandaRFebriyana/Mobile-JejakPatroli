@@ -18,7 +18,7 @@ class AttendanceController {
         List<Attendance> attendances = await AttendanceService.getAllAttendances(token);
         return attendances;
       } else {
-        throw Exception('Please login first.');
+        throw Exception('Mohon login terlebih dahulu.');
       }
     } catch (error) {
       throw 'Failed to fetch attendance history: ${error.toString()}';
@@ -41,7 +41,7 @@ class AttendanceController {
         locationAddress: locationAddress,
         photo: photo,
       );
-      MyQuickAlert.success(context, 'Attendance saved successfully',
+      MyQuickAlert.success(context, 'Kehadiran berhasil tersimpan',
         onConfirmBtnTap: () {
           Navigator.of(context).pop();
           Get.toNamed('/menu-nav');
@@ -65,7 +65,7 @@ class AttendanceController {
         id: id,
         checkOut: checkOut,
       );
-      MyQuickAlert.success(context, 'Checked out successfully.');
+      MyQuickAlert.success(context, 'Berhasil check out.');
       Get.toNamed('/menu-nav');
     } catch (error) {
       MySnackbar.failure(context, '$error');

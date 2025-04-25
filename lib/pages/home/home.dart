@@ -73,17 +73,17 @@ class _HomeState extends State<Home> {
       final attendance = await AttendanceService.getToday();
 
       if (attendance == null) {
-        MyQuickAlert.info(context, 'Presence is not yet available!');
+        MyQuickAlert.info(context, 'Presensi belum tersedia!');
         return;
       }
 
       if (attendance.checkOut != attendance.endTime) {
-        MyQuickAlert.info(context, 'It\'s not time to go home yet!');
+        MyQuickAlert.info(context, 'Belum saatnya untuk pulang!');
         return;
       }
 
       if (attendance.checkOut != null) {
-        MyQuickAlert.info(context, 'You have made a presence!');
+        MyQuickAlert.info(context, 'Anda telah membuat presensi!');
         return;
       }
       int id = attendance.id;
@@ -92,9 +92,9 @@ class _HomeState extends State<Home> {
         id: id,
         checkOut: TimeOfDay.now(),
       );
-      print("Attendance ID: $id || Checked out successfully.");
+      print("Attendance ID: $id || berhasil check out.");
     } catch (error) {
-      print('Failed to check out: $error');
+      print('Gagal untuk check out: $error');
     }
   }
 
@@ -124,12 +124,12 @@ class _HomeState extends State<Home> {
     final attendance = await AttendanceService.getToday();
 
     if (attendance == null) {
-      MyQuickAlert.info(context, 'Presence is not yet available!');
+      MyQuickAlert.info(context, 'Presensi belum tersedia!');
       return;
     }
 
     if (attendance.checkIn != null) {
-      MyQuickAlert.info(context, 'You have made a presence!');
+      MyQuickAlert.info(context, 'Kamu telah membuat presensi!');
       return;
     }
     final picker = ImagePicker();
@@ -141,14 +141,14 @@ class _HomeState extends State<Home> {
 
       if (image.lengthSync() > 2048 * 1024) {
         image = await compressImage(image);
-        print('Compressed Photo Size: ${image.lengthSync()} bytes');
+        print('Ukuran Foto Terkompresi: ${image.lengthSync()} bytes');
       }
       int id = attendance.id;
-      print("Attendance ID: $id");
+      print("ID Kehadiran: $id");
 
       Get.toNamed('/presensi', arguments: {'id': id, 'image': image});
     } else {
-      print('No image selected.');
+      print('Tidak ada gambar yang dipilih.');
     }
   }
 
@@ -167,7 +167,7 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Today",
+                      "Hari ini",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -176,7 +176,7 @@ class _HomeState extends State<Home> {
                     TextButton(
                       onPressed: () => Get.toNamed('/permission'),
                       child: Text(
-                        "Apply for permission",
+                        "Ajukan permohonan izin",
                         style: GoogleFonts.poppins(
                           color: Colors.red,
                         ),
@@ -192,7 +192,7 @@ class _HomeState extends State<Home> {
                     () => _pickImage(context),
                     "Check In",
                     _formatTime(attendance.checkIn ?? attendance.startTime),
-                    attendance.checkIn != null ? "Done" : "Go to Work",
+                    attendance.checkIn != null ? "Selesai" : "Pergi Bekerja",
                     attendance.checkIn != null ? Colors.green : Colors.black,
                     FontAwesomeIcons.signIn,
                   ),
@@ -200,7 +200,7 @@ class _HomeState extends State<Home> {
                     () => _saveCheckOut(),
                     "Check Out",
                     _formatTime(attendance.checkOut ?? attendance.endTime),
-                    attendance.checkOut != null ? "Done" : "Go Home",
+                    attendance.checkOut != null ? "Selesai" : "Pulang",
                     attendance.checkOut != null ? Colors.green : Colors.black,
                     FontAwesomeIcons.signOut,
                   ),
@@ -216,7 +216,7 @@ class _HomeState extends State<Home> {
                   } else {
                     if (snapshot.data == false) {
                       return _buildPatrolCard(
-                        title: 'You have not patrolled today.',
+                        title: 'Kamu belum patroli hari ini.',
                         icon: Icons.warning,
                         color: Colors.red,
                       );
@@ -232,7 +232,7 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Schedule",
+                      "Jadwal",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -241,7 +241,7 @@ class _HomeState extends State<Home> {
                     TextButton(
                       onPressed: () => Get.toNamed('/history-presence'),
                       child: Text(
-                        "See all",
+                        "Lihat Semua",
                         style: GoogleFonts.poppins(
                           color: Colors.blue,
                         ),
@@ -265,7 +265,7 @@ class _HomeState extends State<Home> {
                 );
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(
-                  child: Text('No schedule available.'),
+                  child: Text('Jadwal belum tersedia.'),
                 );
               } else {
                 List<Attendance> attendances = snapshot.data!;
@@ -336,7 +336,7 @@ class _HomeState extends State<Home> {
                 Padding(
                   padding: const EdgeInsets.only(left: 3, bottom: 3),
                   child: Text(
-                    "Welcome Back!",
+                    "Selamat Datang Kembali!",
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,

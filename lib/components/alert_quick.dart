@@ -7,7 +7,7 @@ class MyQuickAlert {
     QuickAlert.show(
       context: context,
       type: QuickAlertType.success,
-      title: 'Success!',
+      title: 'Sukses!',
       text: text,
       onConfirmBtnTap: onConfirmBtnTap,
     );
@@ -18,7 +18,7 @@ class MyQuickAlert {
     QuickAlert.show(
       context: context,
       type: QuickAlertType.error,
-      title: 'Error!',
+      title: 'Eror!',
       text: text,
       onConfirmBtnTap: onConfirmBtnTap,
     );
@@ -57,8 +57,8 @@ class MyQuickAlert {
   }
 
   static void confirm(BuildContext context, String text,
-      {String confirmButtonText = 'Yes',
-      String cancelButtonText = 'No',
+      {String confirmButtonText = 'Ya',
+      String cancelButtonText = 'Tidak',
       VoidCallback? onConfirmBtnTap,
       VoidCallback? onCancelBtnTap}) {
     QuickAlert.show(

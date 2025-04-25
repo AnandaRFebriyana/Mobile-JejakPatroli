@@ -25,7 +25,7 @@ class AuthController {
     try {
       MyQuickAlert.confirm(
         context,
-        'Do you want to logout',
+        'Apakah kamu ingin keluar',
         onConfirmBtnTap: () async {
           await AuthService.logout();
           Get.offAllNamed('/login');

@@ -29,7 +29,7 @@ class _HistoryReportState extends State<HistoryReport> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "History Report"),
+          const Header(title: "Histori Laporan"),
           Expanded(
             child: FutureBuilder<List<Report>>(
               future: _futureReport,
@@ -45,7 +45,7 @@ class _HistoryReportState extends State<HistoryReport> {
                       children: [
                         const SizedBox(height: 16),
                         Text(
-                          'Reports not yet available.',
+                          'Laporan belum tersedia.',
                           style: GoogleFonts.poppins(fontSize: 15),
                         ),
                       ],

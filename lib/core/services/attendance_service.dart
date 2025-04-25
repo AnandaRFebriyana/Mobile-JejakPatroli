@@ -23,7 +23,7 @@ class AttendanceService {
       );
       return attendances;
     } else {
-      throw 'Failed to load attendances. Status code: ${response.statusCode}';
+      throw 'Gagal memuat kehadiran. Status code: ${response.statusCode}';
     }
   }
 
@@ -41,7 +41,7 @@ class AttendanceService {
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw 'Failed to load attendance today. Status code: ${response.statusCode}';
+      throw 'Gagal memuat kehadiran hari ini. Status code: ${response.statusCode}';
     }
   }
 
@@ -68,7 +68,7 @@ class AttendanceService {
 
       if (photo != null) {
         request.files.add(
-          await http.MultipartFile.fromPath('photo', photo.path),
+          await http.MultipartFile.fromPath('foto', photo.path),
         );
       }
       // print('Request Fields: ${request.fields}');
@@ -78,11 +78,11 @@ class AttendanceService {
       if (response.statusCode == 200) {
         return responseBody.body;
       } else {
-        throw 'Failed to make a presence. Status code: ${response.statusCode}';
+        throw 'Gagal membuat presensi. Status code: ${response.statusCode}';
       }
     } catch (e) {
       print('Error: $e');
-      throw Exception('Failed to make a presence: $e');
+      throw Exception('Gagal membuat presensi: $e');
     }
   }
 
@@ -100,9 +100,9 @@ class AttendanceService {
     final response = await request.send();
 
     if (response.statusCode == 200) {
-      print('Succsessfully check out.');
+      print('Berhasil check out.');
     } else {
-      throw 'Failed to make a presence. Status code: ${response.statusCode}';
+      throw 'Gagal membuat presensi. Status code: ${response.statusCode}';
     }
   }
 

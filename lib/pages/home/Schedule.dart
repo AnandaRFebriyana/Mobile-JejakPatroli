@@ -26,7 +26,7 @@ class _ScheduleState extends State<SchedulePresence> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "Schedule", backButton: true),
+          const Header(title: "Jadwal", backButton: true),
           Expanded(
             child: FutureBuilder<List<Schedule>>(
               future: _futureSchedules,
@@ -43,7 +43,7 @@ class _ScheduleState extends State<SchedulePresence> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(height: 16),
-                          Text('Schedule not yet available.',
+                          Text('Jadwal belum tersedia.',
                             style: GoogleFonts.poppins(fontSize: 15),
                           ),
                         ],

@@ -14,7 +14,7 @@ class PermissionController {
       if (token != null) {
         bool success = await PermissionService.postPermission(token, permission);
         if (success) {
-          MySnackbar.success(context, 'Permission created successfully');
+          MySnackbar.success(context, 'Izin berhasil dibuat');
           Get.toNamed('/menu-nav');
           return;
         }

@@ -59,7 +59,7 @@ class _PermissionPageState extends State<PermissionPage> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "Permission", backButton: true),
+          const Header(title: "Izin", backButton: true),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -137,7 +137,7 @@ class _PermissionPageState extends State<PermissionPage> {
               ),
               if (_reasonNotEntered)
               Text(
-                'Please enter a reason',
+                'Masukkan alasan',
                 style: TextStyle(color: Colors.red),
               ),
             ],
@@ -180,7 +180,7 @@ class _PermissionPageState extends State<PermissionPage> {
           ),
           if (_imageNotSelected)
           Text(
-            'Please select an image',
+            'Silahkan pilih foto',
             style: TextStyle(color: Colors.red),
           ),
           const SizedBox(height: 10),

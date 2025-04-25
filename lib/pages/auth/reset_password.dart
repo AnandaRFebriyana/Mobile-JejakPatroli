@@ -10,9 +10,9 @@ class ResetPassword extends StatefulWidget {
 
   const ResetPassword({
     Key? key,
-    this.title = "Reset Password",
+    this.title = "Atur Ulang Password",
     this.subtitle =
-        "Enter your email and verification code to reset your password.",
+        "Masukkan email dan kode verifikasi Anda untuk mengatur ulang kata sandi Anda.",
   }) : super(key: key);
 
   @override
@@ -85,7 +85,7 @@ class _ResetPasswordState extends State<ResetPassword> {
                     child: TextFormField(
                       obscureText: _isObscureConfirmPassword,
                       decoration: InputDecoration(
-                        labelText: "Confirm Password",
+                        labelText: "Konfirmasi Password",
                         labelStyle: GoogleFonts.poppins(
                           color: Colors.grey,
                           fontSize: 14,
@@ -125,10 +125,10 @@ class _ResetPasswordState extends State<ResetPassword> {
               ),
             ),
             MyButton(
-              text: "Reset Password",
+              text: "Atur Ulang Password",
               onPressed: () {
                 Get.offNamed('/login');
-                Get.snackbar('Reset Password', 'Password reset berhasil!',
+                Get.snackbar('Atur Ulang Password', 'Atur Ulang Password berhasil!',
                     backgroundColor: Colors.green,
                     colorText: Colors.white,
                     snackPosition: SnackPosition.BOTTOM);

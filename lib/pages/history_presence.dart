@@ -33,7 +33,7 @@ class _HistoryPresenceState extends State<HistoryPresencePage> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "History Presence"),
+          const Header(title: "Histori Presensi"),
           Expanded(
             child: FutureBuilder<List<Attendance>>(
               future: _attendanceFuture,
@@ -48,7 +48,7 @@ class _HistoryPresenceState extends State<HistoryPresencePage> {
                   );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
-                    child: Text('No history attendance data available.'),
+                    child: Text('Tidak ada data kehadiran histori yang tersedia.'),
                   );
                 } else {
                   List<Attendance> attendances = snapshot.data!;

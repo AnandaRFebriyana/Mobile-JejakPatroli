@@ -49,11 +49,11 @@ class _MenuNavState extends State<MenuNav> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                _buildTabItem(0, Icons.home, 'Home'),
-                _buildTabItem(1, Icons.assignment, 'Presence'),
+                _buildTabItem(0, Icons.home, 'Beranda'),
+                _buildTabItem(1, Icons.assignment, 'Presensi'),
                 SizedBox(width: 40),
-                _buildTabItem(2, Icons.history, 'History Report'),
-                _buildTabItem(3, Icons.person, 'Profile'),
+                _buildTabItem(2, Icons.history, 'Histori Laporan'),
+                _buildTabItem(3, Icons.person, 'Profil'),
               ],
             ),
           ),

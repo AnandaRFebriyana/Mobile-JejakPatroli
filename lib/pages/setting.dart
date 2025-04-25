@@ -37,7 +37,7 @@ class _SettingState extends State<Setting> {
     return Scaffold(
       body: Column(
         children: [
-          const Header(title: "Profile"),
+          const Header(title: "Profil"),
           const SizedBox(height: 20),
           Expanded(
             child: _buildSetting(context),
@@ -86,7 +86,7 @@ class _SettingState extends State<Setting> {
               buildTextField(address, Icons.home, maxLines: 2),
               const SizedBox(height: 30),
               MyButton(
-                text: "Logout",
+                text: "Keluar",
                 onPressed: () {
                   AuthController.logout(context);
                 },

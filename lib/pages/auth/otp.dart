@@ -9,9 +9,9 @@ class Otp extends StatefulWidget {
 
   const Otp({
     Key? key,
-    this.title = "Verify Code",
+    this.title = "Kode Verifikasi",
     this.subtitle =
-        "Enter your verification  code from your email that we’ve sent.",
+        "Masukkan kode verifikasi dari email yang telah kami kirim.",
   }) : super(key: key);
 
   @override
@@ -82,7 +82,7 @@ class _OtpState extends State<Otp> {
             ),
             SizedBox(height: 20),
             MyButton(
-              text: "Verify",
+              text: "Verifikasi",
               onPressed: () => Get.toNamed('/reset-pass'),
             ),
           ],

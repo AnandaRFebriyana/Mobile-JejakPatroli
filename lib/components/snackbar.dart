@@ -30,11 +30,11 @@ class MySnackbar {
   }
 
   static void success(BuildContext context, String message) {
-    show(context, 'Success!', message, ContentType.success);
+    show(context, 'Sukses!', message, ContentType.success);
   }
 
   static void failure(BuildContext context, String message) {
-    show(context, 'Error!', message, ContentType.failure);
+    show(context, 'Eror!', message, ContentType.failure);
   }
 
   static void help(BuildContext context, String message) {

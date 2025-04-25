@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/logo_patrol.png',
+                'assets/images/With JejakPatrol Transparant.png',
                 height: 200.0,
                 width: 200.0,
               ),

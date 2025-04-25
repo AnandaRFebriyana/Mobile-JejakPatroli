@@ -10,8 +10,8 @@ class Login extends StatefulWidget {
 
   const Login({
     Key? key,
-    this.title = "Welcome Back",
-    this.subtitle = "Let’s log in, to continue!",
+    this.title = "Selamat Datang",
+    this.subtitle = "Silahkan log in, untuk melanjutkan!",
   }) : super(key: key);
 
   @override
@@ -78,7 +78,7 @@ class _LoginState extends State<Login> {
             // ),
             const SizedBox(height: 20),
             MyButton(
-              text: "Login",
+              text: "Masuk",
               onPressed: () => AuthController.login(context, email, password),
             ),
           ],
