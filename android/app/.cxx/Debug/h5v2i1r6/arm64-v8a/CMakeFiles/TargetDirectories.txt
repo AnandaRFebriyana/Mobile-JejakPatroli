@@ -1,0 +1,2 @@
+D:/SEMESTER 6/Mobile-JejakPatroli/android/app/.cxx/Debug/h5v2i1r6/arm64-v8a/CMakeFiles/edit_cache.dir
+D:/SEMESTER 6/Mobile-JejakPatroli/android/app/.cxx/Debug/h5v2i1r6/arm64-v8a/CMakeFiles/rebuild_cache.dir
