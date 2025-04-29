@@ -334,11 +334,11 @@ class _HomeState extends State<Home> {
               children: [
                 const SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.only(left: 3, bottom: 3),
+                  padding: const EdgeInsets.only(left: 3, bottom: 2),
                   child: Text(
-                    "Selamat Datang Kembali!",
+                    "Selamat Datang",
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 25,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 1,
                       wordSpacing: 2,
@@ -347,11 +347,11 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 3, bottom: 25),
+                  padding: const EdgeInsets.only(left: 3, bottom: 70),
                   child: Text('${user.name}',
                     // child: Text('Fanidiya Tasya',
                     style: GoogleFonts.poppins(
-                      fontSize: 20,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1,
                       wordSpacing: 2,
