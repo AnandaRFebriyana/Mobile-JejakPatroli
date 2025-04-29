@@ -32,7 +32,7 @@ class _MenuNavState extends State<MenuNav> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(40.0),
         ),
-        onPressed: ()=> Get.toNamed('scanner'),
+        onPressed: ()=> Get.toNamed('/report'),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: ClipRRect(
