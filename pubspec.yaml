@@ -32,6 +32,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter:
     sdk: flutter
+  
+  google_maps_flutter: ^2.5.0
   flutter_svg: ^2.0.10
   font_awesome_flutter: ^10.7.0
   geocoding: ^3.0.0
