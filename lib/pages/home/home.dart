@@ -370,7 +370,8 @@ class _HomeState extends State<Home> {
               shape: BoxShape.circle,
               image: DecorationImage(
                 image: user.photo != null && user.photo!.isNotEmpty
-                    ? NetworkImage('https://jejakpatroli.my.id/storage/${user.photo}')
+                    // ? NetworkImage('http://jejakpatroli.my.id/storage/${user.photo}')
+                    ? NetworkImage('http://192.168.1.30s:8000/storage/${user.photo}')
                     : const AssetImage('assets/images/user_profile.jpeg') as ImageProvider,
                 fit: BoxFit.cover,
               ),

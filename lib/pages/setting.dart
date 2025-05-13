@@ -63,7 +63,7 @@ class _SettingState extends State<Setting> {
             shape: BoxShape.circle,
             image: DecorationImage(
               image: user.photo != null && user.photo!.isNotEmpty
-                    ? NetworkImage('https://patroltrack.my.id/storage/${user.photo}')
+                    ? NetworkImage('http://192.168.1.30/storage/${user.photo}')
                     : const AssetImage('assets/images/user_profile.jpeg') as ImageProvider,
               fit: BoxFit.cover,
             ),

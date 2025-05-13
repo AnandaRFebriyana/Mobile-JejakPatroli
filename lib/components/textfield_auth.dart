@@ -7,6 +7,7 @@ class MyTextField extends StatelessWidget {
   final bool isPassword;
   final bool isObscure;
   final VoidCallback? toggleObscureText;
+  final String? errorText;
 
   const MyTextField({
     Key? key,
@@ -15,6 +16,7 @@ class MyTextField extends StatelessWidget {
     this.isPassword = false,
     this.isObscure = false,
     this.toggleObscureText,
+    this.errorText,
   }) : super(key: key);
 
   @override

@@ -20,8 +20,12 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   bool _isObscure = true;
+  bool _isLoading = false;
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
+  String? emailError;
+  String? passwordError;
+
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +53,7 @@ class _LoginState extends State<Login> {
                   MyTextField(
                     controller: email,
                     labelText: "Email",
+                    errorText: emailError,
                   ),
                   MyTextField(
                     controller: password,
@@ -60,6 +65,7 @@ class _LoginState extends State<Login> {
                         _isObscure = !_isObscure;
                       });
                     },
+                    errorText: passwordError,
                   ),
                 ],
               ),
@@ -79,7 +85,24 @@ class _LoginState extends State<Login> {
             const SizedBox(height: 20),
             MyButton(
               text: "Masuk",
-              onPressed: () => AuthController.login(context, email, password),
+              onPressed: () async {
+                setState(() {
+                  emailError = email.text.isEmpty ? 'Email wajib diisi' : null;
+                  passwordError = password.text.isEmpty ? 'Password wajib diisi' : null;
+                });
+
+                if (emailError == null && passwordError == null) {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  
+                  await AuthController.login(context, email, password);
+
+                  setState(() {
+                    _isLoading = false;
+                  });
+                }
+              }
             ),
           ],
         ),
