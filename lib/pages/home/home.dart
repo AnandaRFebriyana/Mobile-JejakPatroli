@@ -14,7 +14,9 @@ import 'package:patrol_track_mobile/components/history_card.dart';
 import 'package:patrol_track_mobile/components/alert_quick.dart';
 import 'package:patrol_track_mobile/core/controllers/attendance_controller.dart';
 import 'package:patrol_track_mobile/core/controllers/report_controller.dart';
+import 'package:patrol_track_mobile/core/controllers/schedule_controller.dart';
 import 'package:patrol_track_mobile/core/models/attendance.dart';
+import 'package:patrol_track_mobile/core/models/schedule.dart';
 import 'package:patrol_track_mobile/core/models/user.dart';
 import 'package:patrol_track_mobile/core/services/attendance_service.dart';
 import 'package:patrol_track_mobile/core/services/auth_service.dart';
@@ -26,22 +28,40 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   late User user = User(name: '', email: '');
-  late Attendance attendance = Attendance(
-      id: 1,
-      date: DateTime(2024),
-      startTime: const TimeOfDay(hour: 00, minute: 00),
-      endTime: const TimeOfDay(hour: 00, minute: 00));
+  Attendance? attendance;
   DateTime today = DateTime.now();
   late Future<bool> _todayReportFuture;
   late Future<List<Attendance>> _attendanceFuture;
+  late Future<List<Schedule>> _scheduleFuture;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     fetchUser();
     fetchToday();
-    _todayReportFuture = ReportController.checkTodayReport(context);
-    _attendanceFuture = AttendanceController.getAttendanceHistory(context);
+    _refreshData();
+    
+    // Set up periodic refresh every 1 minute
+    _refreshTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+      if (mounted) {
+        _refreshData();
+      }
+    });
+  }
+
+  void _refreshData() {
+    setState(() {
+      _todayReportFuture = ReportController.checkTodayReport(context);
+      _attendanceFuture = AttendanceController.getAttendanceHistory(context);
+      _scheduleFuture = ScheduleController.getSchedules(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> fetchUser() async {
@@ -51,47 +71,49 @@ class _HomeState extends State<Home> {
         user = getUser;
       });
     } catch (e) {
-      print('Error: $e');
+      print('Error fetching user: $e');
     }
   }
 
   Future<void> fetchToday() async {
     try {
       Attendance? getToday = await AttendanceService.getToday();
-      if (getToday != null) {
-        setState(() {
-          attendance = getToday;
-        });
-      }
+      setState(() {
+        attendance = getToday;
+      });
     } catch (e) {
-      print('Error: $e');
+      print('Error fetching today: $e');
     }
   }
 
   Future<void> _saveCheckOut() async {
     try {
-      final attendance = await AttendanceService.getToday();
+      final currentAttendance = await AttendanceService.getToday();
 
-      if (attendance == null) {
+      if (currentAttendance == null) {
         MyQuickAlert.info(context, 'Presensi belum tersedia!');
         return;
       }
 
-      if (attendance.checkOut != attendance.endTime) {
+      if (currentAttendance.checkOut != currentAttendance.endTime) {
         MyQuickAlert.info(context, 'Belum saatnya untuk pulang!');
         return;
       }
 
-      if (attendance.checkOut != null) {
+      if (currentAttendance.checkOut != null) {
         MyQuickAlert.info(context, 'Anda telah membuat presensi!');
         return;
       }
-      int id = attendance.id;
+
+      int id = currentAttendance.id;
       await AttendanceController.saveCheckOut(
         context,
         id: id,
         checkOut: TimeOfDay.now(),
       );
+      
+      fetchToday();
+      
       print("Attendance ID: $id || berhasil check out.");
     } catch (error) {
       print('Gagal untuk check out: $error');
@@ -121,34 +143,55 @@ class _HomeState extends State<Home> {
   }
 
   void _pickImage(BuildContext context) async {
-    final attendance = await AttendanceService.getToday();
+    try {
+      final currentAttendance = await AttendanceService.getToday();
 
-    if (attendance == null) {
-      MyQuickAlert.info(context, 'Presensi belum tersedia!');
-      return;
-    }
-
-    if (attendance.checkIn != null) {
-      MyQuickAlert.info(context, 'Kamu telah membuat presensi!');
-      return;
-    }
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
-    if (pickedFile != null) {
-      File image = File(pickedFile.path);
-      print('Photo Size: ${image.lengthSync()} bytes');
-
-      if (image.lengthSync() > 2048 * 1024) {
-        image = await compressImage(image);
-        print('Ukuran Foto Terkompresi: ${image.lengthSync()} bytes');
+      if (currentAttendance == null) {
+        MyQuickAlert.info(context, 'Presensi belum tersedia!');
+        return;
       }
-      int id = attendance.id;
-      print("ID Kehadiran: $id");
 
-      Get.toNamed('/presensi', arguments: {'id': id, 'image': image});
-    } else {
-      print('Tidak ada gambar yang dipilih.');
+      if (currentAttendance.checkIn != null) {
+        MyQuickAlert.info(context, 'Kamu telah membuat presensi!');
+        return;
+      }
+
+      final picker = ImagePicker();
+      print('Opening camera...');
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,  // Reduce quality to ensure smaller file size
+        maxWidth: 1024,    // Limit max dimensions
+        maxHeight: 1024,
+      );
+
+      if (pickedFile != null) {
+        print('Photo captured: ${pickedFile.path}');
+        File image = File(pickedFile.path);
+        
+        print('Original photo size: ${image.lengthSync()} bytes');
+        print('Original photo exists: ${image.existsSync()}');
+
+        if (image.lengthSync() > 2048 * 1024) {
+          print('Compressing photo...');
+          image = await compressImage(image);
+          print('Compressed photo size: ${image.lengthSync()} bytes');
+          print('Compressed photo exists: ${image.existsSync()}');
+        }
+        
+        int id = currentAttendance.id;
+        print("Navigating to presensi with ID: $id and photo: ${image.path}");
+
+        await Get.toNamed('/presensi', arguments: {'id': id, 'image': image});
+        
+        fetchToday();
+      } else {
+        print('No photo was captured.');
+        MyQuickAlert.info(context, 'Foto diperlukan untuk presensi!');
+      }
+    } catch (e) {
+      print('Error in _pickImage: $e');
+      MyQuickAlert.error(context, 'Gagal mengambil foto: $e');
     }
   }
 
@@ -191,17 +234,25 @@ class _HomeState extends State<Home> {
                   twoCard(
                     () => _pickImage(context),
                     "Check In",
-                    _formatTime(attendance.checkIn ?? attendance.startTime),
-                    attendance.checkIn != null ? "Selesai" : "Pergi Bekerja",
-                    attendance.checkIn != null ? Colors.green : Colors.black,
+                    attendance?.checkIn != null 
+                        ? _formatTime(attendance!.checkIn!)
+                        : attendance?.startTime != null 
+                            ? _formatTime(attendance!.startTime)
+                            : "--:--",
+                    attendance?.checkIn != null ? "Selesai" : "Pergi Bekerja",
+                    attendance?.checkIn != null ? Colors.green : Colors.black,
                     FontAwesomeIcons.signIn,
                   ),
                   twoCard(
                     () => _saveCheckOut(),
                     "Check Out",
-                    _formatTime(attendance.checkOut ?? attendance.endTime),
-                    attendance.checkOut != null ? "Selesai" : "Pulang",
-                    attendance.checkOut != null ? Colors.green : Colors.black,
+                    attendance?.checkOut != null 
+                        ? _formatTime(attendance!.checkOut!)
+                        : attendance?.endTime != null 
+                            ? _formatTime(attendance!.endTime)
+                            : "--:--",
+                    attendance?.checkOut != null ? "Selesai" : "Pulang",
+                    attendance?.checkOut != null ? Colors.green : Colors.black,
                     FontAwesomeIcons.signOut,
                   ),
                 ],
@@ -252,9 +303,14 @@ class _HomeState extends State<Home> {
               ),
             ],
           ),
-          FutureBuilder<List<Attendance>>(
-            future: _attendanceFuture,
+          FutureBuilder<List<Schedule>>(
+            future: _scheduleFuture,
             builder: (context, snapshot) {
+              print('Schedule FutureBuilder state: ${snapshot.connectionState}');
+              if (snapshot.hasError) {
+                print('Schedule error: ${snapshot.error}');
+              }
+              
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(),
@@ -264,43 +320,66 @@ class _HomeState extends State<Home> {
                   child: Text('Error: ${snapshot.error}'),
                 );
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                print('No schedule data available');
                 return const Center(
                   child: Text('Jadwal belum tersedia.'),
                 );
               } else {
-                List<Attendance> attendances = snapshot.data!;
+                List<Schedule> schedules = snapshot.data!;
+                print('Loaded ${schedules.length} schedules');
                 List<Widget> cards = [];
                 int limit = 5;
                 int counter = 0;
 
-                for (var attendance in attendances) {
-                  if (counter >= limit) {
-                    break;
-                  }
-                  if (attendance.checkIn != null) {
-                    cards.add(
-                      MyCard(
-                        icon: IconType.CheckIn,
-                        title: "Check In",
-                        subtitle: DateFormat('dd-MM-yyyy').format(attendance.date),
-                        time: _formatTime(attendance.checkIn!),
-                        status: attendance.status ?? '',
+                for (var schedule in schedules) {
+                  if (counter >= limit) break;
+                  
+                  cards.add(
+                    Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                      child: Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: const Color(0xFF3085FE).withOpacity(0.1),
+                              ),
+                              child: const Icon(
+                                FontAwesomeIcons.calendarWeek,
+                                color: Color(0xFF305E8B),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  schedule.day,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  "${schedule.startTime} - ${schedule.endTime}",
+                                  style: GoogleFonts.poppins(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                    counter++;
-                  }
-                  if (attendance.checkOut != null && counter < limit) {
-                    cards.add(
-                      MyCard(
-                        icon: IconType.CheckOut,
-                        title: "Check Out",
-                        subtitle: DateFormat('dd-MM-yyyy').format(attendance.date),
-                        time: _formatTime(attendance.checkOut!),
-                        status: attendance.status ?? '',
-                      ),
-                    );
-                    counter++;
-                  }
+                    ),
+                  );
+                  counter++;
                 }
 
                 return Expanded(

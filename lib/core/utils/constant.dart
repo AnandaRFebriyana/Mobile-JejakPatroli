@@ -5,7 +5,7 @@ class Constant {
   // static const String BASE_URL = 'http://127.0.0.1:8000/api';
   // static const String BASE_URL = 'https://jejakpatroli.my.id/api';
   // static const String BASE_URL = 'http://10.10.5.20:8000/api';
-  static const String BASE_URL = 'http://192.168.1.30:8000/api';
+  static const String BASE_URL = 'http://10.10.183.161:8000/api';
 
   // poltek
   static const double targetLatitude = -8.1599633;

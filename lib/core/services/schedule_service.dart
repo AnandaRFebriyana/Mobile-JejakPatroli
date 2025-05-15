@@ -9,10 +9,16 @@ class ScheduleService {
   static Future<List<Schedule>> getSchedules(String token) async {
     try {
       final url = Uri.parse('${Constant.BASE_URL}/schedule');
+      print('Fetching schedules from: $url');
+      print('Using token: $token');
+      
       final response = await http.get(
         url,
         headers: {'Authorization': '$token'},
       );
+      
+      print('Schedule response status: ${response.statusCode}');
+      print('Schedule response body: ${response.body}');
         
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
@@ -21,11 +27,14 @@ class ScheduleService {
             (schedule) => Schedule.fromJson(schedule),
           ),
         );
+        print('Successfully parsed ${schedules.length} schedules');
         return schedules;
       } else {
+        print('Failed to load schedules: ${response.statusCode} - ${response.body}');
         throw Exception('Failed to load schedules');
       }
     } catch (e) {
+      print('Exception in getSchedules: $e');
       throw Exception(e.toString());
     }
   }

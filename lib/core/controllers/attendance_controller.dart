@@ -44,7 +44,7 @@ class AttendanceController {
       MyQuickAlert.success(context, 'Kehadiran berhasil tersimpan',
         onConfirmBtnTap: () {
           Navigator.of(context).pop();
-          Get.toNamed('/menu-nav');
+          Get.offAllNamed('/tracking-map');
         },
       );
     } catch (error) {
