@@ -10,13 +10,15 @@ class AuthController {
   static Future<void> login(BuildContext context, TextEditingController email, TextEditingController password) async {
     try {
       User? user = await AuthService.login(email.text, password.text);
-      if (user != null && user.token != null) {
-        await Constant.saveToken(user.token!);
-
+      if (user != null) {
+        // Token is already saved in AuthService.login
+        print('Login successful, navigating to home');
         Get.toNamed('/menu-nav', arguments: user);
+      } else {
+        throw 'Login failed: No user data received';
       }
     } catch (error) {
-      print(error.toString());
+      print('Error in AuthController.login: $error');
       MyQuickAlert.error(context, error.toString());
     }
   }

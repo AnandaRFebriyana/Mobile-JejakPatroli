@@ -37,6 +37,22 @@ class MyCard extends StatelessWidget {
     }
   }
 
+  Color _getStatusColor() {
+    switch (status.toLowerCase()) {
+      case 'terlambat':
+        return Colors.orange;
+      case 'hadir':
+        return Colors.green;
+      case 'sakit':
+      case 'izin':
+        return Colors.blue;
+      case 'alpha':
+        return Colors.red;
+      default:
+        return Colors.black;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -104,6 +120,8 @@ class MyCard extends StatelessWidget {
                     status,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
+                      color: _getStatusColor(),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],

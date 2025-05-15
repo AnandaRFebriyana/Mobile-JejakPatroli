@@ -152,7 +152,9 @@ class _HomeState extends State<Home> {
       }
 
       if (currentAttendance.checkIn != null) {
-        MyQuickAlert.info(context, 'Kamu telah membuat presensi!');
+        // User has already checked in - just inform them
+        // No need to redirect to map screen as location tracking runs in background
+        MyQuickAlert.info(context, 'Anda sudah melakukan check-in hari ini.');
         return;
       }
 
@@ -239,8 +241,12 @@ class _HomeState extends State<Home> {
                         : attendance?.startTime != null 
                             ? _formatTime(attendance!.startTime)
                             : "--:--",
-                    attendance?.checkIn != null ? "Selesai" : "Pergi Bekerja",
-                    attendance?.checkIn != null ? Colors.green : Colors.black,
+                    attendance?.checkIn != null 
+                        ? attendance!.getEffectiveStatus() == "Terlambat" ? "Terlambat" : "Hadir" 
+                        : "Pergi Bekerja",
+                    attendance?.checkIn != null 
+                        ? attendance!.getEffectiveStatus() == "Terlambat" ? Colors.orange : Colors.green
+                        : Colors.black,
                     FontAwesomeIcons.signIn,
                   ),
                   twoCard(

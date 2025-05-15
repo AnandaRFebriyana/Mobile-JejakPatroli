@@ -21,4 +21,14 @@ class Constant {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+  
+  static Future<void> saveUserId(int userId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('user_id', userId);
+  }
+
+  static Future<int?> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id');
+  }
 }  

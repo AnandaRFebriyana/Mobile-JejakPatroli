@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/location_service.dart';
+import '../services/firebase_location_service.dart';
 import '../models/location_track.dart';
+import 'package:patrol_track_mobile/core/utils/Constant.dart';
+import 'package:http/http.dart' as http;
 
 class LocationController extends GetxController {
   final LocationService _locationService = LocationService();
+  final FirebaseLocationService _firebaseLocationService = FirebaseLocationService();
   final RxBool isTracking = false.obs;
+  final RxBool useFirebase = true.obs; // Default to Firebase
   final Rx<LatLng> currentPosition = LatLng(0, 0).obs;
   final RxList<LocationTrack> trackingHistory = <LocationTrack>[].obs;
   Timer? _locationTimer;
@@ -15,21 +21,92 @@ class LocationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _checkLocationPermission();
-    _loadTrackingHistory();
+    print('Location Controller initialized');
+    _initializeFirebase();
+    _initializeLocation();
+  }
+
+  Future<void> _initializeFirebase() async {
+    try {
+      await FirebaseLocationService.initializeFirebase();
+      print('Firebase initialized in LocationController');
+    } catch (e) {
+      print('Error initializing Firebase: $e');
+      useFirebase.value = false; // Fall back to API if Firebase init fails
+    }
   }
 
   @override
   void onClose() {
     _locationTimer?.cancel();
+    print('Location Controller closed');
     super.onClose();
+  }
+  
+  Future<void> _initializeLocation() async {
+    try {
+      await _checkLocationPermission();
+      await _getCurrentLocation();
+      await _loadTrackingHistory();
+    } catch (e) {
+      print('Error initializing location: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to initialize location: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      print('Current position: ${position.latitude}, ${position.longitude}');
+      currentPosition.value = LatLng(position.latitude, position.longitude);
+    } catch (e) {
+      print('Error getting current location: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to get current location: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   Future<void> _loadTrackingHistory() async {
     try {
-      final history = await _locationService.getTrackingHistory();
+      print('Loading tracking history');
+      List<LocationTrack> history;
+      
+      if (useFirebase.value) {
+        // Get user ID from shared preferences
+        final guardId = await Constant.getUserId();
+        if (guardId == null) {
+          print('No guard ID found, trying API fallback');
+          history = await _locationService.getTrackingHistory();
+        } else {
+          print('Loading history from Firebase for guard ID: $guardId');
+          history = await _firebaseLocationService.getLocationHistory(guardId);
+        }
+      } else {
+        history = await _locationService.getTrackingHistory();
+      }
+      
+      print('Loaded ${history.length} tracking history items');
       trackingHistory.value = history;
     } catch (e) {
+      print('Error loading tracking history: $e');
+      // Try API as fallback if Firebase fails
+      if (useFirebase.value) {
+        print('Falling back to API for tracking history');
+        try {
+          final history = await _locationService.getTrackingHistory();
+          trackingHistory.value = history;
+        } catch (fallbackError) {
+          print('API fallback also failed: $fallbackError');
+        }
+      }
+      
       Get.snackbar(
         'Error',
         'Failed to load tracking history: $e',
@@ -39,72 +116,264 @@ class LocationController extends GetxController {
   }
 
   Future<void> _checkLocationPermission() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied');
-    }
-  }
-
-  Future<void> startTracking(int guardId, int shiftId) async {
-    await _checkLocationPermission();
-    isTracking.value = true;
-
-    // Save initial location
-    Position position = await Geolocator.getCurrentPosition();
-    currentPosition.value = LatLng(position.latitude, position.longitude);
-    await _saveLocation(guardId, shiftId, position);
-
-    // Start periodic location updates
-    _locationTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
-      if (isTracking.value) {
-        position = await Geolocator.getCurrentPosition();
-        currentPosition.value = LatLng(position.latitude, position.longitude);
-        await _saveLocation(guardId, shiftId, position);
-      }
-    });
-  }
-
-  Future<void> stopTracking() async {
-    isTracking.value = false;
-    _locationTimer?.cancel();
-    await _loadTrackingHistory(); // Reload history after stopping
-  }
-
-  Future<void> _saveLocation(int guardId, int shiftId, Position position) async {
     try {
-      final now = DateTime.now().toIso8601String();
-      final location = LocationTrack(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        guardId: guardId,
-        shiftId: shiftId,
-        createdAt: now,
-        updatedAt: now,
-      );
-      await _locationService.saveLocation(location);
-      await _loadTrackingHistory(); // Reload history after saving new location
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('Location services are disabled');
+        Get.snackbar(
+          'Error',
+          'Location services are disabled. Please enable location services.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return Future.error('Location services are disabled.');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        print('Requesting location permission');
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('Location permission denied');
+          Get.snackbar(
+            'Error',
+            'Location permissions are denied. Please enable location permissions.',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return Future.error('Location permissions are denied');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('Location permissions are permanently denied');
+        Get.snackbar(
+          'Error',
+          'Location permissions are permanently denied. Please enable location permissions in settings.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return Future.error('Location permissions are permanently denied');
+      }
+      
+      print('Location permission granted');
     } catch (e) {
+      print('Error checking location permission: $e');
       Get.snackbar(
         'Error',
-        'Failed to save location: $e',
+        'Failed to check location permission: $e',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
 
+  Future<void> startTracking(int guardId, int shiftId) async {
+    try {
+      print('\n==== STARTING LOCATION TRACKING ====');
+      print('Guard ID: $guardId, Shift ID: $shiftId');
+      print('Using Firebase: ${useFirebase.value}');
+      
+      await _checkLocationPermission();
+      isTracking.value = true;
+
+      // Get and save current location
+      final position = await Geolocator.getCurrentPosition();
+      print('Initial position: ${position.latitude}, ${position.longitude}');
+      currentPosition.value = LatLng(position.latitude, position.longitude);
+      
+      // Save location using Firebase or direct API
+      if (useFirebase.value) {
+        bool success = await _firebaseLocationService.saveLocation(
+          guardId, 
+          shiftId, 
+          position.latitude, 
+          position.longitude
+        );
+        
+        if (!success) {
+          print('Firebase save failed, trying API fallback');
+          await _directSaveLocation(guardId, shiftId, position);
+        }
+      } else {
+        await _directSaveLocation(guardId, shiftId, position);
+      }
+
+      // Set up periodic tracking
+      _locationTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
+        if (isTracking.value) {
+          try {
+            print('\n[${DateTime.now()}] Periodic location update');
+            final newPosition = await Geolocator.getCurrentPosition();
+            print('New position: ${newPosition.latitude}, ${newPosition.longitude}');
+            currentPosition.value = LatLng(newPosition.latitude, newPosition.longitude);
+            
+            // Save location with Firebase or direct API
+            if (useFirebase.value) {
+              bool success = await _firebaseLocationService.saveLocation(
+                guardId, 
+                shiftId, 
+                newPosition.latitude, 
+                newPosition.longitude
+              );
+              
+              if (!success) {
+                print('Firebase periodic save failed, trying API fallback');
+                await _directSaveLocation(guardId, shiftId, newPosition);
+              }
+            } else {
+              await _directSaveLocation(guardId, shiftId, newPosition);
+            }
+          } catch (e) {
+            print('Error in periodic location update: $e');
+          }
+        }
+      });
+      
+      print('Location tracking started!\n');
+      Get.snackbar(
+        'Tracking Aktif',
+        'Lokasi Anda sedang dilacak',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      print('Error starting tracking: $e');
+      isTracking.value = false;
+      Get.snackbar(
+        'Error',
+        'Gagal memulai pelacakan: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+  
+  // Simplified method to directly save location to API
+  Future<void> _directSaveLocation(int guardId, int shiftId, Position position) async {
+    try {
+      final token = await Constant.getToken();
+      if (token == null || token.isEmpty) {
+        print('ERROR: Token not available');
+        return;
+      }
+      
+      // Prepare simple request to match your Laravel controller
+      final url = Uri.parse('${Constant.BASE_URL}/locations');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
+        'Accept': 'application/json',
+      };
+      final body = jsonEncode({
+        'shift_id': shiftId,
+        'latitude': position.latitude,
+        'longitude': position.longitude
+      });
+      
+      print('Sending location to: $url');
+      final response = await http.post(url, headers: headers, body: body);
+      
+      print('Response: ${response.statusCode} - ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Location saved successfully');
+      } else {
+        print('❌ Failed to save location: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error saving location: $e');
+    }
+  }
+
+  Future<void> stopTracking() async {
+    try {
+      print('Stopping location tracking');
+      isTracking.value = false;
+      _locationTimer?.cancel();
+      await _loadTrackingHistory(); // Reload history after stopping
+      print('Location tracking stopped');
+      Get.snackbar(
+        'Tracking Stopped',
+        'Your location tracking has been stopped',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error.withOpacity(0.7),
+        colorText: Get.theme.colorScheme.onError,
+      );
+    } catch (e) {
+      print('Error stopping tracking: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to stop tracking: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<void> toggleFirebase() async {
+    useFirebase.value = !useFirebase.value;
+    print('Switched to ${useFirebase.value ? "Firebase" : "API"} for location tracking');
+    await _loadTrackingHistory(); // Reload history with new source
+    
+    Get.snackbar(
+      'Tracking Method Changed',
+      'Now using ${useFirebase.value ? "Firebase" : "API"} for location tracking',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  Future<void> testConnection() async {
+    try {
+      print('Testing connections...');
+      bool firebaseOk = false;
+      bool apiOk = false;
+      
+      // Test Firebase connection
+      try {
+        firebaseOk = await _firebaseLocationService.testFirebaseConnection();
+        print('Firebase connection test: ${firebaseOk ? "SUCCESS" : "FAILED"}');
+      } catch (e) {
+        print('Firebase test error: $e');
+      }
+      
+      // Test API connection
+      try {
+        apiOk = await _locationService.testApiConnection();
+        print('API connection test: ${apiOk ? "SUCCESS" : "FAILED"}');
+      } catch (e) {
+        print('API test error: $e');
+      }
+      
+      // Show results to user
+      Get.snackbar(
+        'Connection Test Results',
+        'Firebase: ${firebaseOk ? "✅" : "❌"}, API: ${apiOk ? "✅" : "❌"}',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+      );
+      
+      // Automatically select the working connection method
+      if (firebaseOk && !useFirebase.value) {
+        useFirebase.value = true;
+        print('Automatically switched to Firebase');
+      } else if (!firebaseOk && useFirebase.value && apiOk) {
+        useFirebase.value = false;
+        print('Automatically switched to API');
+      }
+    } catch (e) {
+      print('Error in testConnection: $e');
+    }
+  }
+
   Future<void> refreshTrackingHistory() async {
-    await _loadTrackingHistory();
+    try {
+      print('Manually refreshing tracking history');
+      await _loadTrackingHistory();
+      print('Tracking history refreshed');
+      Get.snackbar(
+        'Refreshed',
+        'Tracking history has been refreshed',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      print('Error refreshing tracking history: $e');
+    }
   }
 } 

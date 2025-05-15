@@ -67,7 +67,7 @@ class _HistoryPresenceState extends State<HistoryPresencePage> {
                           title: "Check In",
                           subtitle: DateFormat('dd-MM-yyyy').format(attendance.date),
                           time: _formatTime(attendance.checkIn!),
-                          status: attendance.status ?? '',
+                          status: attendance.getEffectiveStatus(),
                         ),
                       );
                       counter++;
@@ -79,7 +79,7 @@ class _HistoryPresenceState extends State<HistoryPresencePage> {
                           title: "Check Out",
                           subtitle: DateFormat('dd-MM-yyyy').format(attendance.date),
                           time: _formatTime(attendance.checkOut!),
-                          status: attendance.status ?? '',
+                          status: attendance.getEffectiveStatus(),
                         ),
                       );
                       counter++;

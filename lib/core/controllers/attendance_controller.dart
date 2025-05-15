@@ -7,6 +7,7 @@ import 'package:patrol_track_mobile/components/snackbar.dart';
 import 'package:patrol_track_mobile/core/models/attendance.dart';
 import 'package:patrol_track_mobile/core/services/attendance_service.dart';
 import 'package:patrol_track_mobile/core/utils/constant.dart';
+import 'package:patrol_track_mobile/controllers/location_controller.dart';
 
 class AttendanceController {
 
@@ -41,10 +42,44 @@ class AttendanceController {
         locationAddress: locationAddress,
         photo: photo,
       );
+      
+      // Start location tracking service in the background
+      try {
+        print('==== STARTING BACKGROUND LOCATION TRACKING ====');
+        print('Guard ID: $id, Shift ID: $id');
+        
+        // Try to find existing controller or create a new one
+        LocationController? locationController;
+        try {
+          locationController = Get.find<LocationController>();
+          print('Found existing LocationController');
+        } catch (e) {
+          print('No existing LocationController found, creating new one');
+          locationController = Get.put(LocationController());
+        }
+        
+        // Start tracking if controller is available
+        if (locationController != null) {
+          print('Starting tracking with controller');
+          locationController.startTracking(id, id);
+          print('Background location tracking started for guard $id');
+        } else {
+          print('ERROR: LocationController is null!');
+        }
+        print('==== BACKGROUND TRACKING SETUP COMPLETED ====');
+      } catch (e) {
+        print('==== ERROR STARTING LOCATION TRACKING ====');
+        print('Error details: $e');
+        print('==== END ERROR REPORT ====');
+        // Don't show this error to the user as it's a background service
+      }
+      
+      // Just notify the user of successful check-in without redirecting to map
       MyQuickAlert.success(context, 'Kehadiran berhasil tersimpan',
         onConfirmBtnTap: () {
           Navigator.of(context).pop();
-          Get.offAllNamed('/tracking-map');
+          // Return to the home screen instead of going to the map
+          Get.offAllNamed('/menu-nav');
         },
       );
     } catch (error) {

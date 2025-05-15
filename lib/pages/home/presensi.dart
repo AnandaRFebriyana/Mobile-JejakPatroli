@@ -218,6 +218,28 @@ class _PresensiState extends State<Presensi> {
                       text: "Simpan Presensi",
                       onPressed: () => _saveAttendance(),
                     ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Navigate to the Firebase tracking page
+                        Get.toNamed('/firebase-tracking', arguments: {
+                          'guard_id': _id ?? 1,
+                          'shift_id': 1,
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepOrange,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.location_on),
+                          SizedBox(width: 8),
+                          Text('Start Firebase Tracking'),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
