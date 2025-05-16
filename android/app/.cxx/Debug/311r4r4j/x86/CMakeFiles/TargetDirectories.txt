@@ -1,0 +1,2 @@
+E:/KULIAH/Semester 5/project/Mobile-JejakPatroli/android/app/.cxx/Debug/311r4r4j/x86/CMakeFiles/edit_cache.dir
+E:/KULIAH/Semester 5/project/Mobile-JejakPatroli/android/app/.cxx/Debug/311r4r4j/x86/CMakeFiles/rebuild_cache.dir
