@@ -18,18 +18,34 @@ class LocationTrack {
   });
 
   factory LocationTrack.fromJson(Map<String, dynamic> json) {
-    return LocationTrack(
-      id: json['id'],
-      latitude: double.parse(json['latitude'].toString()),
-      longitude: double.parse(json['longitude'].toString()),
-      shiftId: json['shift_id'],
-      guardId: json['guard_id'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-    );
+    try {
+      return LocationTrack(
+        id: json['id'] != null ? int.parse(json['id'].toString()) : null,
+        latitude: json['latitude'] != null ? double.parse(json['latitude'].toString()) : 0.0,
+        longitude: json['longitude'] != null ? double.parse(json['longitude'].toString()) : 0.0,
+        shiftId: json['shift_id'] != null ? int.parse(json['shift_id'].toString()) : 0,
+        guardId: json['guard_id'] != null ? int.parse(json['guard_id'].toString()) : 0,
+        createdAt: json['created_at']?.toString() ?? DateTime.now().toIso8601String(),
+        updatedAt: json['updated_at']?.toString() ?? DateTime.now().toIso8601String(),
+      );
+    } catch (e) {
+      print('Error parsing LocationTrack JSON: $e');
+      print('Problematic JSON: $json');
+      // Return a default object with zeros to avoid crashing
+      return LocationTrack(
+        id: null,
+        latitude: 0.0,
+        longitude: 0.0,
+        shiftId: 0,
+        guardId: 0,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {
+    // Use snake_case field names as expected by the API
     return {
       'id': id,
       'latitude': latitude,

@@ -40,9 +40,9 @@ class RouteApp {
       },
     ),
     
-    // New Firebase-capable tracking page
+    // New tracking page
     GetPage(
-      name: '/firebase-tracking',
+      name: '/location-tracking',
       page: () {
         // Extract guard_id and shift_id from arguments or use defaults
         int guardId = Get.arguments != null && Get.arguments['guard_id'] != null

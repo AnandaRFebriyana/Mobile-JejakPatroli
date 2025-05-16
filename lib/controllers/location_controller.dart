@@ -4,16 +4,13 @@ import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/location_service.dart';
-import '../services/firebase_location_service.dart';
 import '../models/location_track.dart';
 import 'package:patrol_track_mobile/core/utils/Constant.dart';
 import 'package:http/http.dart' as http;
 
 class LocationController extends GetxController {
   final LocationService _locationService = LocationService();
-  final FirebaseLocationService _firebaseLocationService = FirebaseLocationService();
   final RxBool isTracking = false.obs;
-  final RxBool useFirebase = true.obs; // Default to Firebase
   final Rx<LatLng> currentPosition = LatLng(0, 0).obs;
   final RxList<LocationTrack> trackingHistory = <LocationTrack>[].obs;
   Timer? _locationTimer;
@@ -22,18 +19,7 @@ class LocationController extends GetxController {
   void onInit() {
     super.onInit();
     print('Location Controller initialized');
-    _initializeFirebase();
     _initializeLocation();
-  }
-
-  Future<void> _initializeFirebase() async {
-    try {
-      await FirebaseLocationService.initializeFirebase();
-      print('Firebase initialized in LocationController');
-    } catch (e) {
-      print('Error initializing Firebase: $e');
-      useFirebase.value = false; // Fall back to API if Firebase init fails
-    }
   }
 
   @override
@@ -76,37 +62,11 @@ class LocationController extends GetxController {
   Future<void> _loadTrackingHistory() async {
     try {
       print('Loading tracking history');
-      List<LocationTrack> history;
-      
-      if (useFirebase.value) {
-        // Get user ID from shared preferences
-        final guardId = await Constant.getUserId();
-        if (guardId == null) {
-          print('No guard ID found, trying API fallback');
-          history = await _locationService.getTrackingHistory();
-        } else {
-          print('Loading history from Firebase for guard ID: $guardId');
-          history = await _firebaseLocationService.getLocationHistory(guardId);
-        }
-      } else {
-        history = await _locationService.getTrackingHistory();
-      }
-      
+      List<LocationTrack> history = await _locationService.getTrackingHistory();
       print('Loaded ${history.length} tracking history items');
       trackingHistory.value = history;
     } catch (e) {
       print('Error loading tracking history: $e');
-      // Try API as fallback if Firebase fails
-      if (useFirebase.value) {
-        print('Falling back to API for tracking history');
-        try {
-          final history = await _locationService.getTrackingHistory();
-          trackingHistory.value = history;
-        } catch (fallbackError) {
-          print('API fallback also failed: $fallbackError');
-        }
-      }
-      
       Get.snackbar(
         'Error',
         'Failed to load tracking history: $e',
@@ -168,7 +128,6 @@ class LocationController extends GetxController {
     try {
       print('\n==== STARTING LOCATION TRACKING ====');
       print('Guard ID: $guardId, Shift ID: $shiftId');
-      print('Using Firebase: ${useFirebase.value}');
       
       await _checkLocationPermission();
       isTracking.value = true;
@@ -178,22 +137,8 @@ class LocationController extends GetxController {
       print('Initial position: ${position.latitude}, ${position.longitude}');
       currentPosition.value = LatLng(position.latitude, position.longitude);
       
-      // Save location using Firebase or direct API
-      if (useFirebase.value) {
-        bool success = await _firebaseLocationService.saveLocation(
-          guardId, 
-          shiftId, 
-          position.latitude, 
-          position.longitude
-        );
-        
-        if (!success) {
-          print('Firebase save failed, trying API fallback');
-          await _directSaveLocation(guardId, shiftId, position);
-        }
-      } else {
-        await _directSaveLocation(guardId, shiftId, position);
-      }
+      // Save location using direct API
+      await _directSaveLocation(guardId, shiftId, position);
 
       // Set up periodic tracking
       _locationTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
@@ -204,22 +149,8 @@ class LocationController extends GetxController {
             print('New position: ${newPosition.latitude}, ${newPosition.longitude}');
             currentPosition.value = LatLng(newPosition.latitude, newPosition.longitude);
             
-            // Save location with Firebase or direct API
-            if (useFirebase.value) {
-              bool success = await _firebaseLocationService.saveLocation(
-                guardId, 
-                shiftId, 
-                newPosition.latitude, 
-                newPosition.longitude
-              );
-              
-              if (!success) {
-                print('Firebase periodic save failed, trying API fallback');
-                await _directSaveLocation(guardId, shiftId, newPosition);
-              }
-            } else {
-              await _directSaveLocation(guardId, shiftId, newPosition);
-            }
+            // Save location with direct API
+            await _directSaveLocation(guardId, shiftId, newPosition);
           } catch (e) {
             print('Error in periodic location update: $e');
           }
@@ -244,7 +175,7 @@ class LocationController extends GetxController {
     }
   }
   
-  // Simplified method to directly save location to API
+  // Direct save location to API
   Future<void> _directSaveLocation(int guardId, int shiftId, Position position) async {
     try {
       final token = await Constant.getToken();
@@ -287,6 +218,7 @@ class LocationController extends GetxController {
       isTracking.value = false;
       _locationTimer?.cancel();
       await _loadTrackingHistory(); // Reload history after stopping
+      
       print('Location tracking stopped');
       Get.snackbar(
         'Tracking Stopped',
@@ -305,32 +237,10 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<void> toggleFirebase() async {
-    useFirebase.value = !useFirebase.value;
-    print('Switched to ${useFirebase.value ? "Firebase" : "API"} for location tracking');
-    await _loadTrackingHistory(); // Reload history with new source
-    
-    Get.snackbar(
-      'Tracking Method Changed',
-      'Now using ${useFirebase.value ? "Firebase" : "API"} for location tracking',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
-  }
-
   Future<void> testConnection() async {
     try {
-      print('Testing connections...');
-      bool firebaseOk = false;
+      print('Testing API connection...');
       bool apiOk = false;
-      
-      // Test Firebase connection
-      try {
-        firebaseOk = await _firebaseLocationService.testFirebaseConnection();
-        print('Firebase connection test: ${firebaseOk ? "SUCCESS" : "FAILED"}');
-      } catch (e) {
-        print('Firebase test error: $e');
-      }
       
       // Test API connection
       try {
@@ -343,19 +253,10 @@ class LocationController extends GetxController {
       // Show results to user
       Get.snackbar(
         'Connection Test Results',
-        'Firebase: ${firebaseOk ? "✅" : "❌"}, API: ${apiOk ? "✅" : "❌"}',
+        'API: ${apiOk ? "✅" : "❌"}',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 4),
       );
-      
-      // Automatically select the working connection method
-      if (firebaseOk && !useFirebase.value) {
-        useFirebase.value = true;
-        print('Automatically switched to Firebase');
-      } else if (!firebaseOk && useFirebase.value && apiOk) {
-        useFirebase.value = false;
-        print('Automatically switched to API');
-      }
     } catch (e) {
       print('Error in testConnection: $e');
     }

@@ -55,32 +55,46 @@ class _LocationTrackingPageState extends State<LocationTrackingPage> {
             onPressed: () {
               locationController.testConnection();
             },
-            tooltip: 'Test Connections',
+            tooltip: 'Test Connection',
           ),
         ],
       ),
       body: Column(
         children: [
-          // Firebase/API toggle
-          Obx(() {
-            return SwitchListTile(
-              title: Text(
-                'Using ${locationController.useFirebase.value ? "Firebase" : "API"}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+          // Information card
+          Card(
+            elevation: 4,
+            margin: EdgeInsets.all(8),
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tracking System',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  ListTile(
+                    title: Text(
+                      'Using API Connection',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'Location tracking via server API connection',
+                    ),
+                    leading: Icon(
+                      Icons.location_on,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
               ),
-              subtitle: Text(
-                locationController.useFirebase.value
-                    ? 'Firebase Realtime Database for location tracking'
-                    : 'API connection to server for location tracking',
-              ),
-              value: locationController.useFirebase.value,
-              onChanged: (value) {
-                locationController.toggleFirebase();
-              },
-              activeColor: Colors.green,
-              activeTrackColor: Colors.lightGreen.withOpacity(0.5),
-            );
-          }),
+            ),
+          ),
           
           // Map view
           Expanded(

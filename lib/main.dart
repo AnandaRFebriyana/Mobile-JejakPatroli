@@ -3,9 +3,15 @@ import 'package:get/get.dart';
 import 'package:patrol_track_mobile/pages/splash_screen.dart';
 import 'package:patrol_track_mobile/routes/route_app.dart';
 import 'package:intl/date_symbol_data_local.dart';
-void main() {
+import 'package:patrol_track_mobile/controllers/location_controller.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeDateFormatting("id_ID", null);
+  
+  // Register controllers
+  Get.put(LocationController());
+  
   runApp(const MyApp());
 }
 
