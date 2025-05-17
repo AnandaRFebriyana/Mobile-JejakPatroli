@@ -57,18 +57,32 @@ class _SettingState extends State<Setting> {
     return Column(
       children: [
         Container(
-          width: 90,
-          height: 90,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: DecorationImage(
-              image: user.photo != null && user.photo!.isNotEmpty
-                    ? NetworkImage('http://192.168.1.30/storage/${user.photo}')
-                    : const AssetImage('assets/images/user_profile.jpeg') as ImageProvider,
-              fit: BoxFit.cover,
-            ),
+  margin: const EdgeInsets.only(left: 10),
+  width: 50,
+  height: 50,
+  decoration: const BoxDecoration(
+    shape: BoxShape.circle,
+    color: Colors.grey,
+  ),
+  child: ClipOval(
+    child: user.photo != null && user.photo!.isNotEmpty
+        ? Image.network(
+            'http://jejakpatroli.my.id/storage/${user.photo}',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print('Gagal load gambar: $error');
+              return Image.asset(
+                'assets/images/user_profile.jpeg',
+                fit: BoxFit.cover,
+              );
+            },
+          )
+        : Image.asset(
+            'assets/images/user_profile.jpeg',
+            fit: BoxFit.cover,
           ),
-        ),
+  ),
+),
         const SizedBox(height: 20),
         Expanded(
           child: ListView(
