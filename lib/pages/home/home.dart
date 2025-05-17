@@ -20,6 +20,7 @@ import 'package:patrol_track_mobile/core/models/schedule.dart';
 import 'package:patrol_track_mobile/core/models/user.dart';
 import 'package:patrol_track_mobile/core/services/attendance_service.dart';
 import 'package:patrol_track_mobile/core/services/auth_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -46,6 +47,7 @@ class _HomeState extends State<Home> {
     _refreshTimer = Timer.periodic(Duration(minutes: 1), (timer) {
       if (mounted) {
         _refreshData();
+        fetchToday(); // Also refresh attendance data
       }
     });
   }
@@ -67,9 +69,11 @@ class _HomeState extends State<Home> {
   Future<void> fetchUser() async {
     try {
       User getUser = await AuthService.getUser();
-      setState(() {
-        user = getUser;
-      });
+      if (mounted) {
+        setState(() {
+          user = getUser;
+        });
+      }
     } catch (e) {
       print('Error fetching user: $e');
     }
@@ -78,9 +82,11 @@ class _HomeState extends State<Home> {
   Future<void> fetchToday() async {
     try {
       Attendance? getToday = await AttendanceService.getToday();
-      setState(() {
-        attendance = getToday;
-      });
+      if (mounted) {
+        setState(() {
+          attendance = getToday;
+        });
+      }
     } catch (e) {
       print('Error fetching today: $e');
     }
@@ -120,10 +126,12 @@ class _HomeState extends State<Home> {
     }
   }
 
-  String _formatTime(TimeOfDay time) {
+  String _formatTime(TimeOfDay? time) {
+    if (time == null) return "--:--";
+    
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final format = DateFormat.Hm();
+    final format = DateFormat('HH:mm');
     return format.format(dt);
   }
 
@@ -237,7 +245,7 @@ class _HomeState extends State<Home> {
                     () => _pickImage(context),
                     "Check In",
                     attendance?.checkIn != null 
-                        ? _formatTime(attendance!.checkIn!)
+                        ? _formatTime(attendance!.checkIn)
                         : attendance?.startTime != null 
                             ? _formatTime(attendance!.startTime)
                             : "--:--",
@@ -253,7 +261,7 @@ class _HomeState extends State<Home> {
                     () => _saveCheckOut(),
                     "Check Out",
                     attendance?.checkOut != null 
-                        ? _formatTime(attendance!.checkOut!)
+                        ? _formatTime(attendance!.checkOut)
                         : attendance?.endTime != null 
                             ? _formatTime(attendance!.endTime)
                             : "--:--",
@@ -434,7 +442,6 @@ class _HomeState extends State<Home> {
                 Padding(
                   padding: const EdgeInsets.only(left: 3, bottom: 70),
                   child: Text('${user.name}',
-                    // child: Text('Fanidiya Tasya',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -448,20 +455,32 @@ class _HomeState extends State<Home> {
             ),
           ),
           Container(
-            margin: const EdgeInsets.only(left: 10),
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: user.photo != null && user.photo!.isNotEmpty
-                    // ? NetworkImage('http://jejakpatroli.my.id/storage/${user.photo}')
-                    ? NetworkImage('http://192.168.1.30s:8000/storage/${user.photo}')
-                    : const AssetImage('assets/images/user_profile.jpeg') as ImageProvider,
+  margin: const EdgeInsets.only(left: 10),
+  width: 50,
+  height: 50,
+  decoration: const BoxDecoration(
+    shape: BoxShape.circle,
+    color: Colors.grey,
+  ),
+  child: ClipOval(
+    child: user.photo != null && user.photo!.isNotEmpty
+        ? Image.network(
+            'http://jejakpatroli.my.id/storage/${user.photo}',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print('Gagal load gambar: $error');
+              return Image.asset(
+                'assets/images/user_profile.jpeg',
                 fit: BoxFit.cover,
-              ),
-            ),
+              );
+            },
+          )
+        : Image.asset(
+            'assets/images/user_profile.jpeg',
+            fit: BoxFit.cover,
           ),
+  ),
+),
         ],
       ),
     );
