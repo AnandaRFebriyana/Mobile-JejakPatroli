@@ -41,17 +41,29 @@ class ReportController {
 
   static Future<void> createReport(BuildContext context, Report report) async {
     try {
+      String? token = await Constant.getToken();
+      if (token == null) {
+        throw 'Sesi telah berakhir. Silakan login kembali.';
+      }
+
       await ReportService.postReport(report);
       MyQuickAlert.success(
         context,
-        'Report created successfully',
+        'Laporan berhasil dibuat',
         onConfirmBtnTap: () {
           Navigator.of(context).pop();
           Get.toNamed('/menu-nav');
         },
       );
     } catch (e) {
-      print('Error $e');
+      print('Error in createReport: $e');
+      MyQuickAlert.error(
+        context,
+        'Gagal membuat laporan: $e',
+        onConfirmBtnTap: () {
+          Navigator.of(context).pop();
+        },
+      );
     }
   }
 }

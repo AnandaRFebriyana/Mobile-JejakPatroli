@@ -45,33 +45,49 @@ class ReportService {
   static Future<void> postReport(Report report) async {
     try {
       String? token = await Constant.getToken();
+      if (token == null) {
+        throw 'Token tidak tersedia. Silakan login kembali.';
+      }
+
       final url = Uri.parse('${Constant.BASE_URL}/report/store');
       final request = http.MultipartRequest('POST', url);
 
-      request.headers['Authorization'] = '$token';
+      request.headers['Authorization'] = token;
       request.headers['Accept'] = 'application/json';
 
-      request.fields['location_id'] = report.locationId.toString();
       request.fields['status'] = report.status;
       request.fields['description'] = report.description;
       
       for (File attachment in report.attachments) {
+        if (!await attachment.exists()) {
+          throw 'File tidak ditemukan: ${attachment.path}';
+        }
         request.files.add(
           await http.MultipartFile.fromPath('attachment[]', attachment.path),
         );
       }
 
+      print('Mengirim request ke: $url');
+      print('Headers: ${request.headers}');
+      print('Fields: ${request.fields}');
+      print('Files: ${request.files.map((f) => f.filename).toList()}');
+
       final response = await request.send();
+      final responseBody = await http.Response.fromStream(response);
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${responseBody.body}');
 
       if (response.statusCode == 201) {
-        print('Successfully create report.');
+        print('Laporan berhasil dibuat');
       } else {
-        // throw 'Status Code: ${response.statusCode}';
-        String errorMessage = await response.stream.bytesToString();
-        throw 'Failed to create report: $errorMessage';
+        String errorMessage = responseBody.body;
+        print('Error response: $errorMessage');
+        throw 'Gagal membuat laporan: $errorMessage';
       }
     } catch (e) {
-      print('Error: $e');
+      print('Error in postReport: $e');
+      throw e.toString();
     }
   }
 }

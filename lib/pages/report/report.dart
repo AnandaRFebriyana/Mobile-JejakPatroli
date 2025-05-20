@@ -17,7 +17,14 @@ import 'package:patrol_track_mobile/components/header.dart';
 class ReportPage extends StatefulWidget {
   final String scanResult;
 
-  ReportPage({required this.scanResult});
+  ReportPage({required this.scanResult}) {
+    // Validasi scanResult saat widget dibuat
+    try {
+      int.parse(scanResult.trim());
+    } catch (e) {
+      print('Warning: Invalid scan result format: $scanResult');
+    }
+  }
 
   @override
   _ReportPageState createState() => _ReportPageState();
@@ -29,15 +36,18 @@ class _ReportPageState extends State<ReportPage> {
   late String _currentTime;
   final TextEditingController _desc = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  List<File> _attachments = [];
+  List<MediaItem> _mediaItems = [];
   bool _notesNotSelected = false;
   bool _imageReportNotSelected = false;
   bool _statusNotSlected = false;
+  File? _selectedMedia;
+  bool _isVideo = false;
 
   @override
   void initState() {
     super.initState();
-    _result = TextEditingController(text: widget.scanResult);
+    // Bersihkan input sebelum digunakan
+    _result = TextEditingController(text: widget.scanResult.trim());
     _updateTime();
   }
 
@@ -49,33 +59,62 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future<void> _saveReport() async {
-    setState(() {
-      _notesNotSelected = _desc.text.isEmpty;
-      _imageReportNotSelected = _attachments.isEmpty;
-      _statusNotSlected = _status == null || _status!.isEmpty;
-    });
-
-    print('Status not selected: $_statusNotSlected');
-    print('Notes not selected: $_notesNotSelected');
-    print('Image report not selected: $_imageReportNotSelected');
-
-    // if(!_notesNotSelected && !_imageReportNotSelected && !_statusNotSelected) {
-    if(!_statusNotSlected && !_notesNotSelected && !_imageReportNotSelected ) {
     try {
-        final report = Report(
-          locationId: int.parse(_result.text),
-          locationName: "Location Name",
-          status: _status!,
-          description: _desc.text,
-          attachments: _attachments,
-          createdAt: DateTime.now(),
-        );
-        await ReportController.createReport(context, report);
+      // Debug print untuk melihat nilai setiap field
+      print('=== Debug Info Form ===');
+      print('Status: $_status');
+      print('Deskripsi: ${_desc.text}');
+      print('Media Items: ${_mediaItems.length} items');
+      
+      // Reset status error
+      setState(() {
+        _statusNotSlected = false;
+        _notesNotSelected = false;
+        _imageReportNotSelected = false;
+      });
+
+      // Validasi form
+      String errorMessage = '';
+      
+      if (_status == null || _status!.isEmpty) {
+        setState(() => _statusNotSlected = true);
+        errorMessage += 'Status Lokasi, ';
+      }
+      
+      if (_desc.text.trim().isEmpty) {
+        setState(() => _notesNotSelected = true);
+        errorMessage += 'Catatan Patroli, ';
+      }
+      
+      if (_mediaItems.isEmpty) {
+        setState(() => _imageReportNotSelected = true);
+        errorMessage += 'Foto/Video';
+      }
+
+      // Jika ada error, tampilkan pesan
+      if (errorMessage.isNotEmpty) {
+        errorMessage = 'Mohon lengkapi: ' + errorMessage.replaceAll(RegExp(r', $'), '');
+        print('Validation Error: $errorMessage');
+        MySnackbar.failure(context, errorMessage);
+        return;
+      }
+
+      // Kirim laporan tanpa location ID
+      print('Mengirim laporan...');
+      final report = Report(
+        locationName: "Location Name",
+        status: _status!,
+        description: _desc.text.trim(),
+        attachments: _mediaItems.map((item) => item.file).toList(),
+        createdAt: DateTime.now(),
+      );
+
+      await ReportController.createReport(context, report);
+      print('Laporan berhasil dikirim!');
+
     } catch (e) {
-      MySnackbar.failure(context, 'Gagal mengirim laporan: $e');
-    }
-    } else {
-    MySnackbar.failure(context, 'Lengkapi semua kolom.');
+      print('Error dalam proses pengiriman: $e');
+      MySnackbar.failure(context, 'Terjadi kesalahan saat mengirim laporan');
     }
   }
 
@@ -99,29 +138,72 @@ class _ReportPageState extends State<ReportPage> {
     return compressedFile;
   }
 
-  void _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      File attachment = File(pickedFile.path);
-      int fileSizeInBytes = attachment.lengthSync();
-      print('Photo Size: $fileSizeInBytes bytes');
-
-      if (fileSizeInBytes > 2048 * 1024) {
-        attachment = await compressImage(attachment);
-        fileSizeInBytes = attachment.lengthSync();
-        print('Compressed Photo Size: $fileSizeInBytes bytes');
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 80,
+      );
+      
+      if (photo != null) {
+        File photoFile = File(photo.path);
+        
+        // Pastikan file ada dan bisa diakses
+        if (await photoFile.exists()) {
+          setState(() {
+            _mediaItems.add(MediaItem(file: photoFile, isVideo: false));
+            _imageReportNotSelected = false;
+          });
+          print('Foto berhasil ditambahkan: ${photoFile.path}');
+        } else {
+          print('Error: File foto tidak ditemukan');
+          MySnackbar.failure(context, 'Gagal menyimpan foto');
+        }
       }
-      setState(() {
-        _attachments.add(attachment);
-        _imageReportNotSelected = false;
-      });
+    } catch (e) {
+      print('Error saat mengambil foto: $e');
+      MySnackbar.failure(context, 'Gagal mengambil foto');
     }
   }
 
-  void _removeImage(int index) {
-    setState(() {
-      _attachments.removeAt(index);
-    });
+  Future<void> _recordVideo() async {
+    try {
+      final XFile? video = await _picker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(minutes: 10),
+      );
+      
+      if (video != null) {
+        File videoFile = File(video.path);
+        
+        // Pastikan file ada dan bisa diakses
+        if (await videoFile.exists()) {
+          setState(() {
+            _mediaItems.add(MediaItem(file: videoFile, isVideo: true));
+            _imageReportNotSelected = false;
+          });
+          print('Video berhasil ditambahkan: ${videoFile.path}');
+        } else {
+          print('Error: File video tidak ditemukan');
+          MySnackbar.failure(context, 'Gagal menyimpan video');
+        }
+      }
+    } catch (e) {
+      print('Error saat merekam video: $e');
+      MySnackbar.failure(context, 'Gagal merekam video');
+    }
+  }
+
+  void _removeMedia(int index) {
+    if (index >= 0 && index < _mediaItems.length) {
+      setState(() {
+        _mediaItems.removeAt(index);
+        _imageReportNotSelected = _mediaItems.isEmpty;
+      });
+      print('Media dihapus, sisa ${_mediaItems.length} item');
+    }
   }
 
   @override
@@ -254,69 +336,164 @@ class _ReportPageState extends State<ReportPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    InkWell(
-                      onTap: _pickImage,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15, horizontal: 20),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.camera_alt),
-                            const SizedBox(width: 10),
-                            Text(
-                              "Pilih File",
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ),
-                    if (_imageReportNotSelected)
-                      Text(
-                        'Please select an image',
-                        style: GoogleFonts.poppins(color: Colors.red),
-                      ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _attachments.map((imageFile) {
-                        int index = _attachments.indexOf(imageFile);
-                        return Stack(
-                          children: [
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(color: const Color(0xFF5F5C5C)),
-                                borderRadius: BorderRadius.circular(5.0),
-                                image: DecorationImage(
-                                  image: FileImage(File(imageFile.path)),
-                                  fit: BoxFit.cover,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF3B71CA),
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Row(
+                                          children: [
+                                            Text(
+                                              'Pilih Media',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          _takePhoto();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.camera_alt, color: Colors.grey[700]),
+                                              const SizedBox(width: 16),
+                                              Text(
+                                                'Ambil Foto',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const Divider(height: 1),
+                                      InkWell(
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          _recordVideo();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.videocam, color: Colors.grey[700]),
+                                              const SizedBox(width: 16),
+                                              Text(
+                                                'Ambil Video',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.camera_alt, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Pilih File',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                            Positioned(
-                              bottom: -10,
-                              left: 25,
-                              child: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _removeImage(index),
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
+                          ),
+                        ),
+                      ),
                     ),
+                    if (_mediaItems.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Column(
+                        children: _mediaItems.asMap().entries.map((entry) {
+                          int idx = entry.key;
+                          MediaItem item = entry.value;
+                          return Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  item.isVideo ? Icons.videocam : Icons.image,
+                                  color: Colors.grey[700],
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    item.fileName,
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => _removeMedia(idx),
+                                  icon: const Icon(Icons.close),
+                                  color: Colors.grey[700],
+                                  iconSize: 20,
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                     const SizedBox(height: 30),
                     MyButton(
                       text: "Kirim",
@@ -331,4 +508,14 @@ class _ReportPageState extends State<ReportPage> {
       ),
     );
   }
+}
+
+// Class untuk menyimpan informasi media
+class MediaItem {
+  final File file;
+  final bool isVideo;
+  final String fileName;
+
+  MediaItem({required this.file, required this.isVideo})
+      : fileName = file.path.split('/').last;
 }

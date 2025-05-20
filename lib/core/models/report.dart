@@ -1,7 +1,7 @@
 import 'dart:io';
 
 class Report {
-  final int locationId;
+  final int? locationId;
   final String locationName;
   final String status;
   final String description;
@@ -9,7 +9,7 @@ class Report {
   final DateTime createdAt;
 
   Report({
-    required this.locationId,
+    this.locationId,
     required this.locationName,
     required this.status,
     required this.description,
