@@ -102,10 +102,11 @@ class _ReportPageState extends State<ReportPage> {
       // Kirim laporan tanpa location ID
       print('Mengirim laporan...');
       final report = Report(
-        locationName: "Location Name",
+        id: 0, // ID akan di-generate oleh server
+        guardId: 0, // Guard ID akan di-set oleh server
         status: _status!,
         description: _desc.text.trim(),
-        attachments: _mediaItems.map((item) => item.file).toList(),
+        attachments: _mediaItems.map((item) => item.file.path).toList(),
         createdAt: DateTime.now(),
       );
 

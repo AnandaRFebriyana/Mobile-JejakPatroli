@@ -7,10 +7,14 @@ import 'package:patrol_track_mobile/core/utils/Constant.dart';
 class ReportService {
   static Future<bool> todayReported(String token) async {
     final url = Uri.parse('${Constant.BASE_URL}/today-report');
+    print('ReportService: Checking today report at URL: $url');
+    
     final response = await http.get(
       url,
-      headers: {'Authorization': '$token'},
+      headers: {'Authorization': token},
     );
+    print('ReportService: Today report response status: ${response.statusCode}');
+    print('ReportService: Today report response body: ${response.body}');
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -23,21 +27,34 @@ class ReportService {
 
   static Future<List<Report>> getAllReports(String token) async {
     final url = Uri.parse('${Constant.BASE_URL}/history-report');
+    print('ReportService: Getting all reports from URL: $url');
+    print('ReportService: Using token: ${token.substring(0, 10)}...');
+    
     final response = await http.get(
       url,
-      headers: {'Authorization': '$token'},
+      headers: {'Authorization': token},
     );
+    print('ReportService: History report response status: ${response.statusCode}');
+    print('ReportService: History report response body: ${response.body}');
 
     if (response.statusCode == 200) {
       final result = jsonDecode(response.body);
-      // print(result);
+      print('ReportService: Decoded response: $result');
+      
+      if (result['data'] == null) {
+        print('ReportService: No data field in response');
+        return [];
+      }
+      
       List<Report> reports = List<Report>.from(
         result['data'].map(
           (reports) => Report.fromJson(reports),
         ),
       );
+      print('ReportService: Successfully parsed ${reports.length} reports');
       return reports;
     } else {
+      print('ReportService: Failed to load reports. Status code: ${response.statusCode}');
       throw Exception('Failed to load reports');
     }
   }
@@ -50,6 +67,8 @@ class ReportService {
       }
 
       final url = Uri.parse('${Constant.BASE_URL}/report/store');
+      print('ReportService: Posting report to URL: $url');
+      
       final request = http.MultipartRequest('POST', url);
 
       request.headers['Authorization'] = token;
@@ -58,35 +77,34 @@ class ReportService {
       request.fields['status'] = report.status;
       request.fields['description'] = report.description;
       
-      for (File attachment in report.attachments) {
-        if (!await attachment.exists()) {
-          throw 'File tidak ditemukan: ${attachment.path}';
+      print('ReportService: Report fields: ${request.fields}');
+      
+      for (String attachmentPath in report.attachments) {
+        final file = File(attachmentPath);
+        if (!await file.exists()) {
+          throw 'File tidak ditemukan: $attachmentPath';
         }
         request.files.add(
-          await http.MultipartFile.fromPath('attachment[]', attachment.path),
+          await http.MultipartFile.fromPath('attachment[]', attachmentPath),
         );
       }
 
-      print('Mengirim request ke: $url');
-      print('Headers: ${request.headers}');
-      print('Fields: ${request.fields}');
-      print('Files: ${request.files.map((f) => f.filename).toList()}');
-
+      print('ReportService: Sending request...');
       final response = await request.send();
       final responseBody = await http.Response.fromStream(response);
       
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${responseBody.body}');
+      print('ReportService: Response status: ${response.statusCode}');
+      print('ReportService: Response body: ${responseBody.body}');
 
       if (response.statusCode == 201) {
-        print('Laporan berhasil dibuat');
+        print('ReportService: Report created successfully');
       } else {
         String errorMessage = responseBody.body;
-        print('Error response: $errorMessage');
+        print('ReportService: Error response: $errorMessage');
         throw 'Gagal membuat laporan: $errorMessage';
       }
     } catch (e) {
-      print('Error in postReport: $e');
+      print('ReportService: Error in postReport: $e');
       throw e.toString();
     }
   }

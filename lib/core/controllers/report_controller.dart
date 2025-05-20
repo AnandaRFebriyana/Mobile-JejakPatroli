@@ -10,9 +10,11 @@ class ReportController {
   static Future<bool> checkTodayReport(BuildContext context) async {
     try {
       String? token = await Constant.getToken();
+      print('ReportController: Checking today report with token: ${token?.substring(0, 10)}...');
 
       if (token != null) {
         bool reportedToday = await ReportService.todayReported(token);
+        print('ReportController: Today report status: $reportedToday');
         return reportedToday;
       } else {
         throw Exception('Please login first.');
@@ -26,15 +28,19 @@ class ReportController {
   static Future<List<Report>> getReportHistory(BuildContext context) async {
     try {
       String? token = await Constant.getToken();
+      print('ReportController: Getting report history with token: ${token?.substring(0, 10)}...');
 
       if (token != null) {
+        print('ReportController: Fetching reports from API...');
         List<Report> reports = await ReportService.getAllReports(token);
+        print('ReportController: Successfully fetched ${reports.length} reports');
         return reports;
       } else {
+        print('ReportController: No token available');
         throw Exception('Please login first.');
       }
     } catch (e) {
-      print('Error while fetching reports: $e');
+      print('ReportController: Error while fetching reports: $e');
       return [];
     }
   }
