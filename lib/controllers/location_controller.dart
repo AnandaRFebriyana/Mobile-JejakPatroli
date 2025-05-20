@@ -124,10 +124,10 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<void> startTracking(int guardId, int shiftId) async {
+  Future<void> startTracking(int attendanceId, int guardId) async {
     try {
       print('\n==== STARTING LOCATION TRACKING ====');
-      print('Guard ID: $guardId, Shift ID: $shiftId');
+      print('Attendance ID: $attendanceId, Guard ID: $guardId');
       
       await _checkLocationPermission();
       isTracking.value = true;
@@ -138,29 +138,38 @@ class LocationController extends GetxController {
       currentPosition.value = LatLng(position.latitude, position.longitude);
       
       // Save location using direct API
-      await _directSaveLocation(guardId, shiftId, position);
+      await _directSaveLocation(attendanceId, guardId, position);
 
-      // Set up periodic tracking
-      _locationTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
+      // Set up continuous tracking with 30 second interval
+      _locationTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
         if (isTracking.value) {
           try {
-            print('\n[${DateTime.now()}] Periodic location update');
+            print('\n[${DateTime.now()}] Sending location update...');
             final newPosition = await Geolocator.getCurrentPosition();
             print('New position: ${newPosition.latitude}, ${newPosition.longitude}');
             currentPosition.value = LatLng(newPosition.latitude, newPosition.longitude);
             
             // Save location with direct API
-            await _directSaveLocation(guardId, shiftId, newPosition);
+            await _directSaveLocation(attendanceId, guardId, newPosition);
+            print('Location update sent successfully');
           } catch (e) {
-            print('Error in periodic location update: $e');
+            print('Error in location update: $e');
+            // Try to restart tracking if there's an error
+            if (isTracking.value) {
+              print('Attempting to restart tracking...');
+              startTracking(attendanceId, guardId);
+            }
           }
+        } else {
+          print('Tracking stopped, cancelling timer');
+          timer.cancel();
         }
       });
       
-      print('Location tracking started!\n');
+      print('Location tracking started with 30 second interval!\n');
       Get.snackbar(
         'Tracking Aktif',
-        'Lokasi Anda sedang dilacak',
+        'Lokasi Anda sedang dilacak setiap 30 detik',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 3),
       );
@@ -176,7 +185,7 @@ class LocationController extends GetxController {
   }
   
   // Direct save location to API
-  Future<void> _directSaveLocation(int guardId, int shiftId, Position position) async {
+  Future<void> _directSaveLocation(int attendanceId, int guardId, Position position) async {
     try {
       final token = await Constant.getToken();
       if (token == null || token.isEmpty) {
@@ -184,20 +193,21 @@ class LocationController extends GetxController {
         return;
       }
       
-      // Prepare simple request to match your Laravel controller
-      final url = Uri.parse('${Constant.BASE_URL}/locations');
+      // Prepare request to match Laravel controller
+      final url = Uri.parse('${Constant.BASE_URL}/update-location');
       final headers = {
         'Content-Type': 'application/json',
-        'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
         'Accept': 'application/json',
+        'Authorization': token,  // Just use the token directly
       };
       final body = jsonEncode({
-        'shift_id': shiftId,
+        'attendance_id': attendanceId,
         'latitude': position.latitude,
         'longitude': position.longitude
       });
       
       print('Sending location to: $url');
+      print('Headers: $headers');  // Debug print headers
       final response = await http.post(url, headers: headers, body: body);
       
       print('Response: ${response.statusCode} - ${response.body}');
@@ -206,6 +216,7 @@ class LocationController extends GetxController {
         print('✅ Location saved successfully');
       } else {
         print('❌ Failed to save location: ${response.statusCode}');
+        print('Response body: ${response.body}');  // Print response body for debugging
       }
     } catch (e) {
       print('❌ Error saving location: $e');

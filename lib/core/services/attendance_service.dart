@@ -90,6 +90,7 @@ class AttendanceService {
 
   static Future<String> postCheckIn(
       {required int id,
+      required int guard_id,
       required TimeOfDay checkIn,
       required double longitude,
       required double latitude,
@@ -113,6 +114,12 @@ class AttendanceService {
       request.fields['longitude'] = longitude.toString();
       request.fields['latitude'] = latitude.toString();
       request.fields['location_address'] = locationAddress;
+      request.fields['guard_id'] = guard_id.toString();
+
+      print('DEBUG - Request Fields:');
+      request.fields.forEach((key, value) {
+        print('$key: $value');
+      });
 
       if (photo != null) {
         print('Adding photo to request: ${photo.path}');

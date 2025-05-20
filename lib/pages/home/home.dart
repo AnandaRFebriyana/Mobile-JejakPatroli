@@ -21,6 +21,7 @@ import 'package:patrol_track_mobile/core/models/user.dart';
 import 'package:patrol_track_mobile/core/services/attendance_service.dart';
 import 'package:patrol_track_mobile/core/services/auth_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:patrol_track_mobile/controllers/location_controller.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -28,7 +29,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  late User user = User(name: '', email: '');
+  late User user = User(id: 0, name: '', email: '');
   Attendance? attendance;
   DateTime today = DateTime.now();
   late Future<bool> _todayReportFuture;
@@ -279,7 +280,15 @@ class _HomeState extends State<Home> {
                   } else if (snapshot.hasError) {
                     return Text('Error: ${snapshot.error}');
                   } else {
-                    if (snapshot.data == false) {
+                    // Check if tracking is active
+                    final locationController = Get.find<LocationController>();
+                    if (locationController.isTracking.value) {
+                      return _buildPatrolCard(
+                        title: 'Anda sedang dalam patroli',
+                        icon: Icons.location_on,
+                        color: Colors.green,
+                      );
+                    } else if (snapshot.data == false) {
                       return _buildPatrolCard(
                         title: 'Kamu belum patroli hari ini.',
                         icon: Icons.warning,

@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:patrol_track_mobile/components/button.dart';
 import 'package:patrol_track_mobile/components/header.dart';
 import 'package:patrol_track_mobile/core/controllers/attendance_controller.dart';
+import 'package:patrol_track_mobile/core/services/auth_service.dart';
 import 'package:patrol_track_mobile/core/utils/constant.dart';
 
 class Presensi extends StatefulWidget {
@@ -23,6 +24,7 @@ class _PresensiState extends State<Presensi> {
   bool _isAtTargetLocation = false;
   File? _image;
   int? _id;
+  int? _guardId;
 
   @override
   void initState() {
@@ -31,21 +33,53 @@ class _PresensiState extends State<Presensi> {
     _image = args['image'] as File?;
     _id = args['id'] as int?;
     _initializeLocation();
+    _getGuardId();
+  }
+
+  Future<void> _getGuardId() async {
+    try {
+      final user = await AuthService.getUser();
+      setState(() {
+        _guardId = user.id;
+      });
+    } catch (e) {
+      print('Error getting guard ID: $e');
+    }
   }
 
   Future<void> _saveAttendance() async {
-    if (_id != null && _image != null) {
-      await AttendanceController.saveCheckIn(
-        context,
-        id: _id!,
-        checkIn: TimeOfDay.now(),
-        longitude: _currentLocation!.longitude,
-        latitude: _currentLocation!.latitude,
-        locationAddress: _currentAddress,
-        photo: _image,
-      );
+    if (_id != null && _image != null && _guardId != null) {
+      try {
+        print('DEBUG - Saving attendance with ID: $_id and guard ID: $_guardId');
+        await AttendanceController.saveCheckIn(
+          context,
+          id: _id!,
+          guard_id: _guardId!,
+          checkIn: TimeOfDay.now(),
+          longitude: _currentLocation!.longitude,
+          latitude: _currentLocation!.latitude,
+          locationAddress: _currentAddress,
+          photo: _image,
+        );
+        
+        // Langsung kembali ke home
+        Get.offAllNamed('/menu-nav');
+      } catch (e) {
+        print('Error saving attendance: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } else {
-      throw "Image or Id is not available.";
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data tidak lengkap'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

@@ -13,7 +13,7 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-  late User user = User(name: '', email: '');
+  late User user = User(id: 0, name: '', email: '');
 
   @override
   void initState() {

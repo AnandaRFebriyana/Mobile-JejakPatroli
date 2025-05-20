@@ -28,6 +28,7 @@ class AttendanceController {
 
   static Future<void> saveCheckIn(BuildContext context,
       {required int id,
+      required int guard_id,
       required TimeOfDay checkIn,
       required double longitude,
       required double latitude,
@@ -36,6 +37,7 @@ class AttendanceController {
     try {
       await AttendanceService.postCheckIn(
         id: id,
+        guard_id: guard_id,
         checkIn: checkIn,
         longitude: longitude,
         latitude: latitude,
@@ -46,7 +48,7 @@ class AttendanceController {
       // Start location tracking service in the background
       try {
         print('==== STARTING BACKGROUND LOCATION TRACKING ====');
-        print('Guard ID: $id, Shift ID: $id');
+        print('Attendance ID: $id, Guard ID: $guard_id');
         
         // Try to find existing controller or create a new one
         LocationController? locationController;
@@ -61,8 +63,8 @@ class AttendanceController {
         // Start tracking if controller is available
         if (locationController != null) {
           print('Starting tracking with controller');
-          locationController.startTracking(id, id);
-          print('Background location tracking started for guard $id');
+          locationController.startTracking(id, guard_id);
+          print('Background location tracking started for guard $guard_id');
         } else {
           print('ERROR: LocationController is null!');
         }
