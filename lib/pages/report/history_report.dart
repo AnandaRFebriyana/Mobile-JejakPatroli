@@ -5,6 +5,12 @@ import 'package:patrol_track_mobile/components/history_card.dart';
 import 'package:patrol_track_mobile/core/controllers/report_controller.dart';
 import 'package:patrol_track_mobile/core/models/report.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'dart:typed_data';
+import 'package:patrol_track_mobile/components/video_thumbnail_widget.dart';
+import 'package:patrol_track_mobile/components/video_player_widget.dart';
+import 'package:patrol_track_mobile/pages/report/report_detail.dart';
 
 class HistoryReport extends StatefulWidget {
   @override
@@ -13,6 +19,7 @@ class HistoryReport extends StatefulWidget {
 
 class _HistoryReportState extends State<HistoryReport> {
   late Future<List<Report>> _futureReport;
+  final String baseFileUrl = "https://jejakpatroli.my.id/";
 
   @override
   void initState() {
@@ -68,6 +75,11 @@ class _HistoryReportState extends State<HistoryReport> {
       default:
         return 'File';
     }
+  }
+
+  bool isVideo(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    return extension == 'mp4' || extension == 'mov';
   }
 
   @override
@@ -136,82 +148,135 @@ class _HistoryReportState extends State<HistoryReport> {
                     itemBuilder: (context, index) {
                       final report = reports[index];
                       print('HistoryReport: Building item $index: ${report.id}');
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Laporan #${report.id}",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: getStatusColor(report.status).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      getStatusText(report.status),
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReportDetailPage(report: report),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Laporan #${report.id}",
                                       style: GoogleFonts.poppins(
-                                        color: getStatusColor(report.status),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Deskripsi: ${report.description}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: getStatusColor(report.status).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        getStatusText(report.status),
+                                        style: GoogleFonts.poppins(
+                                          color: getStatusColor(report.status),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Waktu: ${DateFormat('dd/MM/yyyy HH:mm').format(report.createdAt)}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Deskripsi: ${report.description}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
                                   ),
-                                  if (report.attachments.isNotEmpty)
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          report.attachments.first.toLowerCase().endsWith('.mp4')
-                                              ? Icons.videocam
-                                              : Icons.image,
-                                          size: 16,
-                                          color: Colors.blue,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${report.attachments.length} ${getFileType(report.attachments.first)}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Waktu: ${DateFormat('dd/MM/yyyy HH:mm').format(report.createdAt)}',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
-                                ],
-                              ),
-                            ],
+                                    if (report.attachments.isNotEmpty)
+                                      Container(
+                                        width: 80.0 * report.attachments.length,
+                                        height: 60,
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: report.attachments.length,
+                                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                          itemBuilder: (context, i) {
+                                            final file = report.attachments[i];
+                                            final fileUrl = file.startsWith('http') ? file : baseFileUrl + file.replaceAll('\\', '/');
+                                            if (isVideo(file)) {
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (_) => Dialog(
+                                                      child: VideoPlayerWidget(videoUrl: fileUrl),
+                                                    ),
+                                                  );
+                                                },
+                                                child: VideoThumbnailWidget(
+                                                  videoUrl: fileUrl,
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (_) => Dialog(
+                                                        child: VideoPlayerWidget(videoUrl: fileUrl),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              );
+                                            } else {
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (_) => Dialog(
+                                                      child: Image.network(fileUrl, fit: BoxFit.contain),
+                                                    ),
+                                                  );
+                                                },
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: Image.network(
+                                                    fileUrl,
+                                                    width: 60,
+                                                    height: 60,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) => Container(
+                                                      width: 60,
+                                                      height: 60,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(Icons.broken_image, size: 24),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
