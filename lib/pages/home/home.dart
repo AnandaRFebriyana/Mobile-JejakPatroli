@@ -301,7 +301,7 @@ class _HomeState extends State<Home> {
                 },
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -391,6 +391,14 @@ class _HomeState extends State<Home> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                if (schedule.scheduleDate != null)
+                                  Text(
+                                    DateFormat('dd MMMM yyyy', 'id_ID').format(schedule.scheduleDate!),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
                                 Text(
                                   "${schedule.startTime} - ${schedule.endTime}",
                                   style: GoogleFonts.poppins(fontSize: 13),

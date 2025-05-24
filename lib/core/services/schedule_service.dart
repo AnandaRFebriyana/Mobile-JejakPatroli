@@ -22,9 +22,13 @@ class ScheduleService {
         
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
+        print('Decoded schedule data: ${result['data']}');
         List<Schedule> schedules = List<Schedule>.from(
           result['data'].map(
-            (schedule) => Schedule.fromJson(schedule),
+            (schedule) {
+              print('Processing schedule: $schedule');
+              return Schedule.fromJson(schedule);
+            },
           ),
         );
         print('Successfully parsed ${schedules.length} schedules');

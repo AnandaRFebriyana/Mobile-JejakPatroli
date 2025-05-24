@@ -172,12 +172,27 @@ class ReportDetailPage extends StatelessWidget {
                                     child: Image.network(
                                       fileUrl,
                                       fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) => Container(
-                                        width: 200,
-                                        height: 200,
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.broken_image, size: 40),
-                                      ),
+                                      errorBuilder: (context, error, stackTrace) {
+                                        print('Error loading image: $error');
+                                        print('Image URL: $fileUrl');
+                                        print('Stack trace: $stackTrace');
+                                        return Container(
+                                          width: 200,
+                                          height: 200,
+                                          color: Colors.grey[300],
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.broken_image, size: 40),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Gagal memuat gambar',
+                                                style: GoogleFonts.poppins(color: Colors.grey[600]),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
@@ -190,12 +205,30 @@ class ReportDetailPage extends StatelessWidget {
                                 width: 120,
                                 height: 120,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 120,
-                                  height: 120,
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.broken_image, size: 40),
-                                ),
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error loading thumbnail: $error');
+                                  print('Thumbnail URL: $fileUrl');
+                                  print('Stack trace: $stackTrace');
+                                  return Container(
+                                    width: 120,
+                                    height: 120,
+                                    color: Colors.grey[300],
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.broken_image, size: 24),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Gagal memuat',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           );

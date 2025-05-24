@@ -6,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:patrol_track_mobile/components/button.dart';
 import 'package:patrol_track_mobile/components/header.dart';
 import 'package:patrol_track_mobile/core/controllers/permission_controller.dart';
+import 'package:patrol_track_mobile/core/controllers/schedule_controller.dart';
 import 'package:patrol_track_mobile/core/models/permission.dart';
+import 'package:patrol_track_mobile/core/models/schedule.dart';
 
 class PermissionPage extends StatefulWidget {
   @override
@@ -14,28 +16,22 @@ class PermissionPage extends StatefulWidget {
 }
 
 class _PermissionPageState extends State<PermissionPage> {
-  final TextEditingController date = TextEditingController();
   final TextEditingController reason = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   File? _imageFile;
-  bool _dateNotSelected = false;
   bool _reasonNotEntered = false;
   bool _imageNotSelected = false;
+  String? _selectedDate;
 
+  // Add a flag to check if the form has been submitted
+  bool _submitted = false;
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      setState(() {
-        date.text = DateFormat('yyyy-MM-dd').format(picked);
-        _dateNotSelected = false;
-      });
-    }
+  late Future<List<Schedule>> _futureSchedules;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureSchedules = ScheduleController.getSchedules(context);
   }
 
   Future<void> _pickImage() async {
@@ -91,20 +87,46 @@ class _PermissionPageState extends State<PermissionPage> {
                 ),
               ),
               SizedBox(height: 10),
-              TextFormField(
-                controller: date,
-                readOnly: true,
-                onTap: () => _selectDate(context),
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  suffixIcon: GestureDetector(
-                    onTap: () => _selectDate(context),
-                    child: const Icon(Icons.calendar_month_outlined),
-                  ),
-                  // errorText: _dateNotSelected? 'Please select a date':null,
-                ),
+              FutureBuilder<List<Schedule>>(
+                future: _futureSchedules,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Text('Error loading schedules');
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Text('No schedules available');
+                  } else {
+                    List<Schedule> schedules = snapshot.data!;
+                    List<String> availableDates = schedules
+                       .where((schedule) => schedule.scheduleDate != null)
+                       .map((schedule) {
+                         return DateFormat('yyyy-MM-dd').format(schedule.scheduleDate!);
+                    }).toSet().toList();
+
+                    return DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        errorText: _submitted && _selectedDate == null ? 'Please select a date':null,
+                      ),
+                      hint: Text('Pilih Tanggal'),
+                      value: _selectedDate,
+                      items: availableDates.map((String date) {
+                        return DropdownMenuItem<String>(
+                          value: date,
+                          child: Text(date),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedDate = newValue;
+                        });
+                      },
+                    );
+                  }
+                },
               ),
-              if (_dateNotSelected)
+              if (_submitted && _selectedDate == null)
               Text(
                 'Please select a date',
                 style: TextStyle(color: Colors.red),
@@ -211,32 +233,26 @@ class _PermissionPageState extends State<PermissionPage> {
                 )
               : SizedBox(),
           const SizedBox(height: 20),
-          // MyButton(
-          //     text: "Kirim",
-          //     onPressed: () {
-          //       Permission permission = Permission(
-          //         permissionDate: date.text,
-          //         reason: reason.text,
-          //         information: _imageFile,
-          //       );
-          //       PermissionController.createPermission(context, permission);
-          //     },
-          //   ),
           MyButton(
             text: "Kirim",
             onPressed: () {
               setState(() {
-                _dateNotSelected = date.text.isEmpty;
+                _submitted = true;
                 _reasonNotEntered = reason.text.isEmpty;
                 _imageNotSelected = _imageFile == null;
               });
-              if (!_dateNotSelected && !_reasonNotEntered && !_imageNotSelected) {
+              if (_selectedDate != null && !_reasonNotEntered && _imageFile != null) {
                 Permission permission = Permission(
-                  permissionDate: date.text,
+                  permissionDate: _selectedDate!,
                   reason: reason.text,
                   information: _imageFile,
                 );
                 PermissionController.createPermission(context, permission);
+              } else {
+                setState(() {
+                  _reasonNotEntered = reason.text.isEmpty;
+                  _imageNotSelected = _imageFile == null;
+                });
               }
             },
           ),

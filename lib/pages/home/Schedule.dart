@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:patrol_track_mobile/components/header.dart';
 import 'package:patrol_track_mobile/core/controllers/schedule_controller.dart';
 import 'package:patrol_track_mobile/core/models/schedule.dart';
+import 'package:intl/intl.dart';
 
 class SchedulePresence extends StatefulWidget {
   const SchedulePresence({Key? key}) : super(key: key);
@@ -71,7 +72,13 @@ class _ScheduleState extends State<SchedulePresence> {
 class DaySchedule extends StatelessWidget {
   final Schedule schedule;
 
-  DaySchedule(this.schedule);
+  DaySchedule(this.schedule) {
+    print('Building DaySchedule widget:');
+    print('Day: ${schedule.day}');
+    print('Schedule Date: ${schedule.scheduleDate}');
+    print('Start Time: ${schedule.startTime}');
+    print('End Time: ${schedule.endTime}');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,19 +109,30 @@ class DaySchedule extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("${schedule.day}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("${schedule.day}",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    Text("${schedule.startTime} - ${schedule.endTime}",
-                      style: GoogleFonts.poppins(fontSize: 13),
-                    ),
-                  ],
+                      if (schedule.scheduleDate != null) ...[
+                        Text(
+                          DateFormat('dd MMMM yyyy', 'id_ID').format(schedule.scheduleDate!),
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                      Text("${schedule.startTime} - ${schedule.endTime}",
+                        style: GoogleFonts.poppins(fontSize: 13),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
