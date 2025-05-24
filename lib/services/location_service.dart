@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:patrol_track_mobile/core/utils/Constant.dart';
+import 'package:patrol_track_mobile/core/utils/constant.dart';
 import 'package:patrol_track_mobile/models/location_track.dart';
 
 class LocationService {

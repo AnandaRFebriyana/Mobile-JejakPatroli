@@ -48,9 +48,21 @@ class _PresensiState extends State<Presensi> {
   }
 
   Future<void> _saveAttendance() async {
-    if (_id != null && _image != null && _guardId != null) {
+    if (_id != null && _image != null && _guardId != null && _currentLocation != null) {
       try {
         print('DEBUG - Saving attendance with ID: $_id and guard ID: $_guardId');
+        
+        // Check if user is at target location
+        if (!_isAtTargetLocation) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Anda harus berada di lokasi yang ditentukan'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
         await AttendanceController.saveCheckIn(
           context,
           id: _id!,
@@ -74,9 +86,15 @@ class _PresensiState extends State<Presensi> {
         );
       }
     } else {
+      String errorMessage = 'Data tidak lengkap:';
+      if (_id == null) errorMessage += ' ID tidak ditemukan.';
+      if (_image == null) errorMessage += ' Foto tidak ditemukan.';
+      if (_guardId == null) errorMessage += ' ID petugas tidak ditemukan.';
+      if (_currentLocation == null) errorMessage += ' Lokasi tidak ditemukan.';
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data tidak lengkap'),
+        SnackBar(
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );

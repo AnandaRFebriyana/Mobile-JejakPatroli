@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/location_service.dart';
 import '../models/location_track.dart';
-import 'package:patrol_track_mobile/core/utils/Constant.dart';
+import 'package:patrol_track_mobile/core/utils/constant.dart';
 import 'package:http/http.dart' as http;
 
 class LocationController extends GetxController {

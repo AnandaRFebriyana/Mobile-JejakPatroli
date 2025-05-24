@@ -8,6 +8,7 @@ import 'package:patrol_track_mobile/core/models/attendance.dart';
 import 'package:patrol_track_mobile/core/services/attendance_service.dart';
 import 'package:patrol_track_mobile/core/utils/constant.dart';
 import 'package:patrol_track_mobile/controllers/location_controller.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AttendanceController {
 
@@ -98,10 +99,25 @@ class AttendanceController {
   static Future<void> saveCheckOut(BuildContext context,
       {required int id, required TimeOfDay checkOut}) async {
     try {
+      // Stop location tracking first
+      try {
+        final locationController = Get.find<LocationController>();
+        if (locationController.isTracking.value) {
+          print('Stopping location tracking before checkout...');
+          await locationController.stopTracking();
+          // Force set tracking to false to ensure it stops
+          locationController.isTracking.value = false;
+          print('Location tracking stopped successfully');
+        }
+      } catch (e) {
+        print('Error stopping location tracking: $e');
+      }
+
       await AttendanceService.postCheckOut(
         id: id,
         checkOut: checkOut,
       );
+      
       MyQuickAlert.success(context, 'Berhasil check out.');
       Get.toNamed('/menu-nav');
     } catch (error) {

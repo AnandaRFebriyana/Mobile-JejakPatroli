@@ -42,22 +42,25 @@ class _HomeState extends State<Home> {
     super.initState();
     fetchUser();
     fetchToday();
-    _refreshData();
+    _refreshData(includeSchedule: true); // Initial load with schedule
     
     // Set up periodic refresh every 1 minute
     _refreshTimer = Timer.periodic(Duration(minutes: 1), (timer) {
       if (mounted) {
-        _refreshData();
-        fetchToday(); // Also refresh attendance data
+        _refreshData(includeSchedule: false); // Regular refresh without schedule
       }
     });
   }
 
-  void _refreshData() {
+  void _refreshData({bool includeSchedule = false}) {
     setState(() {
       _todayReportFuture = ReportController.checkTodayReport(context);
       _attendanceFuture = AttendanceController.getAttendanceHistory(context);
-      _scheduleFuture = ScheduleController.getSchedules(context);
+      if (includeSchedule) {
+        _scheduleFuture = ScheduleController.getSchedules(context);
+      }
+      // Always refresh today's attendance
+      fetchToday();
     });
   }
 
@@ -102,8 +105,8 @@ class _HomeState extends State<Home> {
         return;
       }
 
-      if (currentAttendance.checkOut != currentAttendance.endTime) {
-        MyQuickAlert.info(context, 'Belum saatnya untuk pulang!');
+      if (currentAttendance.checkIn == null) {
+        MyQuickAlert.info(context, 'Anda harus melakukan check-in terlebih dahulu!');
         return;
       }
 
@@ -124,6 +127,7 @@ class _HomeState extends State<Home> {
       print("Attendance ID: $id || berhasil check out.");
     } catch (error) {
       print('Gagal untuk check out: $error');
+      MyQuickAlert.error(context, error.toString());
     }
   }
 
@@ -161,9 +165,21 @@ class _HomeState extends State<Home> {
       }
 
       if (currentAttendance.checkIn != null) {
-        // User has already checked in - just inform them
-        // No need to redirect to map screen as location tracking runs in background
         MyQuickAlert.info(context, 'Anda sudah melakukan check-in hari ini.');
+        return;
+      }
+
+      // Add complete time validation here
+      final now = TimeOfDay.now();
+      final scheduledStart = currentAttendance.startTime;
+      
+      // Convert to minutes since midnight for comparison
+      int scheduledMinutes = scheduledStart.hour * 60 + scheduledStart.minute;
+      int actualMinutes = now.hour * 60 + now.minute;
+      
+      // If trying to check in too early (more than 30 minutes before scheduled time)
+      if (scheduledMinutes - actualMinutes > 30) {
+        MyQuickAlert.info(context, 'Terlalu dini untuk check-in. Silahkan tunggu mendekati waktu jadwal Anda.');
         return;
       }
 
@@ -280,22 +296,31 @@ class _HomeState extends State<Home> {
                   } else if (snapshot.hasError) {
                     return Text('Error: ${snapshot.error}');
                   } else {
-                    // Check if tracking is active
                     final locationController = Get.find<LocationController>();
-                    if (locationController.isTracking.value) {
+                    
+                    // Sudah checkout dan tracking berhenti = sudah patroli
+                    if (attendance?.checkOut != null && !locationController.isTracking.value) {
                       return _buildPatrolCard(
-                        title: 'Anda sedang dalam patroli',
-                        icon: Icons.location_on,
+                        title: 'Anda sudah patroli hari ini',
+                        icon: Icons.check_circle,
                         color: Colors.green,
                       );
-                    } else if (snapshot.data == false) {
+                    } 
+                    // Tracking masih jalan dan belum checkout = sedang patroli
+                    else if (locationController.isTracking.value && attendance?.checkOut == null) {
                       return _buildPatrolCard(
-                        title: 'Kamu belum patroli hari ini.',
+                        title: 'Anda sedang dalam patroli',
+                        icon: Icons.directions_walk,
+                        color: Colors.blue,
+                      );
+                    }
+                    // Belum tracking dan belum checkout = belum patroli
+                    else {
+                      return _buildPatrolCard(
+                        title: 'Kamu belum patroli hari ini',
                         icon: Icons.warning,
                         color: Colors.red,
                       );
-                    } else {
-                      return SizedBox();
                     }
                   }
                 },
