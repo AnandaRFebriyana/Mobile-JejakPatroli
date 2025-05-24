@@ -51,13 +51,39 @@ class _ScheduleState extends State<SchedulePresence> {
                       ),
                     );
                   } else {
-                    return ListView.builder(
-                      itemCount: schedules.length,
-                      itemBuilder: (context, index) {
-                        final schedule = schedules[index];
-                        return DaySchedule(schedule);
-                      },
-                    );
+                    // Filter schedules to only show today or future schedules
+                    DateTime today = DateTime.now();
+                    List<Schedule> relevantSchedules = schedules.where((schedule) {
+                      // If scheduleDate is null, always show it (assuming it's a recurring weekly schedule)
+                      if (schedule.scheduleDate == null) {
+                        return true;
+                      }
+                      // Otherwise, only show if the date is today or in the future
+                      // Compare only dates, ignore time
+                      return schedule.scheduleDate!.isAfter(today.subtract(Duration(days: 1)));
+                    }).toList();
+
+                    if (relevantSchedules.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(height: 16),
+                            Text('Tidak ada jadwal yang akan datang.',
+                              style: GoogleFonts.poppins(fontSize: 15),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      return ListView.builder(
+                        itemCount: relevantSchedules.length,
+                        itemBuilder: (context, index) {
+                          final schedule = relevantSchedules[index];
+                          return DaySchedule(schedule);
+                        },
+                      );
+                    }
                   }
                 }
               },

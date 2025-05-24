@@ -354,7 +354,18 @@ class _HomeState extends State<Home> {
                 int limit = 5;
                 int counter = 0;
 
-                for (var schedule in schedules) {
+                // Filter schedules to only show today or future schedules
+                List<Schedule> relevantSchedules = schedules.where((schedule) {
+                  // If scheduleDate is null, always show it (assuming it's a recurring weekly schedule)
+                  if (schedule.scheduleDate == null) {
+                    return true;
+                  }
+                  // Otherwise, only show if the date is today or in the future
+                  // Compare only dates, ignore time
+                  return schedule.scheduleDate!.isAfter(today.subtract(Duration(days: 1)));
+                }).toList();
+
+                for (var schedule in relevantSchedules) {
                   if (counter >= limit) break;
                   
                   cards.add(
