@@ -23,7 +23,7 @@ class AttendanceController {
         throw Exception('Mohon login terlebih dahulu.');
       }
     } catch (error) {
-      throw 'Failed to fetch attendance history: ${error.toString()}';
+      throw 'Gagal mengambil riwayat kehadiran. Silakan coba lagi.';
     }
   }
 
@@ -74,36 +74,50 @@ class AttendanceController {
         print('==== ERROR STARTING LOCATION TRACKING ====');
         print('Error details: $e');
         print('==== END ERROR REPORT ====');
-        // Don't show this error to the user as it's a background service
       }
       
-      // Just notify the user of successful check-in without redirecting to map
-      MyQuickAlert.success(context, 'Kehadiran berhasil tersimpan',
+      MyQuickAlert.success(context, 'Berhasil melakukan check in',
         onConfirmBtnTap: () {
           Navigator.of(context).pop();
-          // Return to the home screen instead of going to the map
           Get.offAllNamed('/menu-nav');
         },
       );
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$error'),
-          backgroundColor: Colors.red,
-        ),
-      );
       print('Error: $error');
+      String message = error.toString();
+      
+      // Convert technical error messages to user-friendly messages
+      if (message.contains('Token tidak tersedia')) {
+        message = 'Sesi Anda telah berakhir. Silakan login kembali.';
+      } else if (message.contains('Tidak ada jadwal')) {
+        message = 'Tidak ada jadwal patroli untuk hari ini.';
+      } else if (message.contains('Terlalu dini')) {
+        message = 'Belum waktunya check in. Silakan tunggu sesuai jadwal Anda.';
+      } else if (message.contains('di luar area')) {
+        message = 'Anda berada di luar area yang ditentukan. Pastikan Anda berada di lokasi yang benar.';
+      } else if (message.contains('photo')) {
+        message = 'Foto wajib diambil untuk melakukan check in.';
+      } else {
+        message = 'Gagal melakukan check in. Silakan coba lagi.';
+      }
+      
+      MyQuickAlert.info(context, message);
     }
   }
 
   static Future<void> saveCheckOut(BuildContext context,
       {required int id, required TimeOfDay checkOut}) async {
     try {
-      // Stop location tracking first
+      await AttendanceService.postCheckOut(
+        id: id,
+        checkOut: checkOut,
+      );
+      
+      // Stop location tracking after successful checkout
       try {
         final locationController = Get.find<LocationController>();
         if (locationController.isTracking.value) {
-          print('Stopping location tracking before checkout...');
+          print('Stopping location tracking after successful checkout...');
           await locationController.stopTracking();
           // Force set tracking to false to ensure it stops
           locationController.isTracking.value = false;
@@ -112,17 +126,29 @@ class AttendanceController {
       } catch (e) {
         print('Error stopping location tracking: $e');
       }
-
-      await AttendanceService.postCheckOut(
-        id: id,
-        checkOut: checkOut,
-      );
       
-      MyQuickAlert.success(context, 'Berhasil check out.');
-      Get.toNamed('/menu-nav');
+      MyQuickAlert.success(context, 'Berhasil melakukan check out',
+        onConfirmBtnTap: () {
+          Navigator.of(context).pop();
+          Get.offAllNamed('/menu-nav');
+        },
+      );
     } catch (error) {
-      MySnackbar.failure(context, '$error');
       print('Error: $error');
+      String message = error.toString();
+      
+      // Convert technical error messages to user-friendly messages
+      if (message.contains('Token tidak tersedia')) {
+        message = 'Sesi Anda telah berakhir. Silakan login kembali.';
+      } else if (message.contains('Tidak ada jadwal')) {
+        message = 'Tidak ada jadwal patroli untuk hari ini.';
+      } else if (message.contains('sebelum 30 menit')) {
+        message = 'Belum waktunya check out. Silakan tunggu sesuai jadwal Anda.';
+      } else {
+        message = 'Gagal melakukan check out. Silakan coba lagi.';
+      }
+      
+      MyQuickAlert.info(context, message);
     }
   }
 }
